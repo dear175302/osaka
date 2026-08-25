@@ -615,9 +615,9 @@ strong{font-weight:700;}
 /* ============================================================
    SPLIT BILL · 分帳
    ============================================================ */
-.tools-fab-wrap{position:fixed;right:16px;bottom:22px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);}
+.tools-fab-wrap{position:fixed;right:16px;bottom:22px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);pointer-events:none;}
 .tools-fab-wrap.nav-active{opacity:0;transform:translateZ(0) translateY(-78vh) scale(0.4);pointer-events:none;}
-.tools-fab{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,98,45,0.4);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s ease;flex-shrink:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.tools-fab{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,98,45,0.4);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s ease;flex-shrink:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto;}
 .tools-fab.open{transform:rotate(90deg);}
 .tools-menu{display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;pointer-events:none;transform:translateY(6px);transition:opacity 0.18s ease,transform 0.18s ease;}
 .tools-menu.open{opacity:1;pointer-events:auto;transform:translateY(0);}
