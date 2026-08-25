@@ -12,6 +12,19 @@
    對應功能會有各自的文字提示（例如「地圖載入中」）。*/
 window.addEventListener('error', function(e){ e.preventDefault(); }, true);
 window.addEventListener('unhandledrejection', function(e){ e.preventDefault(); }, true);
+/* 重置手機瀏覽器的雙指縮放：關閉圖片燈箱（放大檢視）後，若使用者先前用手勢
+   放大過畫面，瀏覽器不會自動還原縮放比例。這裡短暫把 viewport 加上
+   maximum-scale=1 強制瀏覽器把目前縮放收回 1 倍，隨後立刻還原成原本的
+   viewport 設定，讓使用者之後仍然可以正常雙指縮放頁面。*/
+function resetPageZoom(){
+  try {
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) return;
+    var original = vp.getAttribute('content');
+    vp.setAttribute('content', original + ',maximum-scale=1,user-scalable=no');
+    setTimeout(function(){ vp.setAttribute('content', original); }, 60);
+  } catch(e){}
+}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2131,6 +2144,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     document.body.style.top='';
     document.body.style.width='';
     window.scrollTo(0,scrollY);
+    resetPageZoom();
   };
   window.lbNav=function(pfx,dir,total){
     var cur=(_s[pfx]||0),next=(cur+dir+total)%total;
@@ -2264,6 +2278,7 @@ window.closeLB = function(pfx) {
     document.body.style.top = '';
     document.body.style.width = '';
     window.scrollTo(0, scrollY);
+    resetPageZoom();
   } else {
     _origCloseLB(pfx);
   }
@@ -4227,6 +4242,7 @@ function mapShowLightboxImg(src){
 }
 function mapCloseLightbox(){
   document.getElementById('map-note-lightbox').style.display = 'none';
+  resetPageZoom();
 }
 var mapNotesListCurrentKey = null;
 var mapNotesPopupEditable = false;
