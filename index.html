@@ -801,6 +801,9 @@ strong{font-weight:700;}
 .memo-body-editor[contenteditable="false"] .memo-inline-img-del{display:none;}
 .memo-toolbar{display:flex;gap:8px;padding:10px var(--pad) max(10px, env(safe-area-inset-bottom));border-top:0.5px solid var(--line);background:var(--surface);flex-shrink:0;}
 .memo-insert-img-btn{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);background:rgba(196,98,45,0.07);border:1px dashed rgba(196,98,45,0.35);border-radius:9px;padding:9px;cursor:pointer;font-family:inherit;}
+#memo-overlay .sb-panel{position:relative;}
+.memo-toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
+.memo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .map-note-save-btn{width:100%;font-size:14px;font-weight:700;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;}
 
 /* ---- 通用刪除確認彈窗（筆記共用，z-index 高於所有 bottom sheet） ---- */
@@ -2666,6 +2669,7 @@ window.closeLB = function(pfx) {
     <div class="sb-body">
       <div id="memo-doc" class="memo-body-editor" data-placeholder="還沒有內容，點右上角「✏️ 編輯」開始輸入…"></div>
     </div>
+    <div class="memo-toast" id="memo-toast"></div>
     <div class="memo-toolbar" id="memo-toolbar" style="display:none;">
       <button type="button" class="memo-insert-img-btn" onclick="memoInsertHeading()">🔖 插入標題</button>
       <label class="memo-insert-img-btn">
@@ -4420,7 +4424,46 @@ function memoDocEl(){
   return document.getElementById('memo-doc');
 }
 function memoSaveLocalBackup(){
-  try { localStorage.setItem('memodoc_osaka2026', JSON.stringify(memoDoc)); } catch(e){}
+  try { localStorage.setItem('memodoc_osaka2026', JSON.stringify(memoDoc)); return true; } catch(e){ return false; }
+}
+var memoToastTimer = null;
+function memoShowToast(msg){
+  var el = document.getElementById('memo-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(memoToastTimer);
+  memoToastTimer = setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+/* 相片壓縮：原始相機照片常常是好幾 MB，好幾張沒壓縮直接塞進 localStorage／Firebase，
+   很容易一次超過容量上限而整批存檔失敗（而且失敗前完全沒有提示）。
+   插入前先用 canvas 縮圖＋轉 JPEG 壓縮，單張控制在合理大小，才不會存到一半就爆掉。 */
+function memoCompressImage(file, cb){
+  var MAX_DIM = 1440, QUALITY = 0.75;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var w = img.width, h = img.height;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        if (w >= h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+        else { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+      }
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        cb(canvas.toDataURL('image/jpeg', QUALITY));
+      } catch (err) {
+        cb(e.target.result); /* 壓縮失敗就退回原圖，至少不會整個插入失敗 */
+      }
+    };
+    img.onerror = function(){ cb(e.target.result); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function(){ cb(null); };
+  reader.readAsDataURL(file);
 }
 function memoBodyIsEmpty(html){
   if (!html) return true;
@@ -4499,9 +4542,29 @@ function memoInitFirebase(){
   }
 }
 function memoSaveRemote(){
-  memoSaveLocalBackup();
+  var localOk = memoSaveLocalBackup();
   if (memoDbRef) {
-    try { memoSuppressEcho = true; memoDbRef.set(memoDoc); } catch(e){}
+    memoSuppressEcho = true;
+    try {
+      var writeResult = memoDbRef.set(memoDoc);
+      if (writeResult && typeof writeResult.catch === 'function') {
+        /* .set() 是非同步的，之前只用 try/catch 只能接到「立即拋出」的錯誤，
+           像圖片太大、網路異常這種寫入失敗都是走 Promise reject，完全沒被接住，
+           使用者看不到任何提示，資料就這樣悄悄不見了 */
+        writeResult.catch(function(err){
+          memoSuppressEcho = false;
+          console.error('Memo remote save failed', err);
+          memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機，請檢查網路或減少圖片數量');
+        });
+      }
+    } catch(e) {
+      memoSuppressEcho = false;
+      console.error('Memo remote save failed', e);
+      memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機');
+    }
+  }
+  if (!localOk) {
+    memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
   }
 }
 function memoOpen(){
@@ -4663,6 +4726,25 @@ function memoTrackSelection(){
   ['keyup', 'mouseup', 'touchend', 'input'].forEach(function(evt){
     doc.addEventListener(evt, memoTrackSelection);
   });
+  /* 自動存檔：以前只有「按完成／關閉面板」才會存檔，如果使用者打完字後
+     直接切走 App、鎖螢幕、或瀏覽器被系統回收，內容會整個不見。
+     現在改成打字時每停頓一下就自動存一次，加上切到背景／關閉分頁時
+     強制立刻存檔（flush），確保不管用什麼方式離開都不會遺失內容。 */
+  var memoAutoSaveTimer = null;
+  doc.addEventListener('input', function(){
+    if (!memoEditMode) return;
+    clearTimeout(memoAutoSaveTimer);
+    memoAutoSaveTimer = setTimeout(function(){ memoCommitEdits(); }, 1200);
+  });
+  function memoFlushPendingSave(){
+    if (!memoEditMode) return;
+    clearTimeout(memoAutoSaveTimer);
+    memoCommitEdits();
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'hidden') memoFlushPendingSave();
+  });
+  window.addEventListener('pagehide', memoFlushPendingSave);
   doc.addEventListener('click', function(e){
     var toggleBtn = e.target && e.target.closest ? e.target.closest('.memo-heading-toggle') : null;
     if (toggleBtn && !memoEditMode) {
@@ -4838,11 +4920,11 @@ function memoInsertImagesAtCursor(input){
   sel.addRange(range);
   function insertOne(i){
     if (i >= files.length) { memoTrackSelection(); return; }
-    var reader = new FileReader();
-    reader.onload = function(e){
+    memoCompressImage(files[i], function(dataUrl){
+      if (!dataUrl) { insertOne(i + 1); return; }
       var img = document.createElement('img');
       img.className = 'memo-inline-img';
-      img.src = e.target.result;
+      img.src = dataUrl;
       var wrap = document.createElement('span');
       wrap.className = 'memo-inline-img-wrap';
       wrap.setAttribute('contenteditable', 'false');
@@ -4868,8 +4950,7 @@ function memoInsertImagesAtCursor(input){
       curSel.addRange(after);
       memoSavedRange = after.cloneRange();
       insertOne(i + 1);
-    };
-    reader.readAsDataURL(files[i]);
+    });
   }
   insertOne(0);
   input.value = '';
