@@ -794,13 +794,14 @@ strong{font-weight:700;}
 .memo-heading-toggle{flex-shrink:0;width:26px;height:26px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:transform 0.2s ease;}
 .memo-heading[data-collapsed="false"] > .memo-heading-toggle{transform:rotate(90deg);}
 .memo-heading-text{flex:1;outline:none;}
-.memo-body-editor > div.memo-collapsible{overflow:hidden;transition:max-height 0.25s ease, opacity 0.2s ease;}
+.memo-body-editor > .memo-collapsible{overflow:hidden;transition:max-height 0.25s ease, opacity 0.2s ease;}
 .memo-inline-img-wrap{position:relative;display:inline-block;vertical-align:top;width:22%;margin:0 2.4% 8px 0;}
 .memo-body-editor img.memo-inline-img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:10px;display:block;cursor:pointer;}
 .memo-inline-img-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:#d64545;color:#fff;font-size:10px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.3);padding:0;}
 .memo-body-editor[contenteditable="false"] .memo-inline-img-del{display:none;}
 .memo-toolbar{display:flex;gap:8px;padding:10px var(--pad) max(10px, env(safe-area-inset-bottom));border-top:0.5px solid var(--line);background:var(--surface);flex-shrink:0;}
 .memo-insert-img-btn{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);background:rgba(196,98,45,0.07);border:1px dashed rgba(196,98,45,0.35);border-radius:9px;padding:9px;cursor:pointer;font-family:inherit;}
+.memo-insert-img-btn.busy{opacity:0.6;pointer-events:none;}
 #memo-overlay .sb-panel{position:relative;}
 .memo-toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
 .memo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -2672,8 +2673,8 @@ window.closeLB = function(pfx) {
     <div class="memo-toast" id="memo-toast"></div>
     <div class="memo-toolbar" id="memo-toolbar" style="display:none;">
       <button type="button" class="memo-insert-img-btn" onclick="memoInsertHeading()">🔖 插入標題</button>
-      <label class="memo-insert-img-btn">
-        📷 插入圖片
+      <label class="memo-insert-img-btn" id="memo-insert-img-label">
+        <span id="memo-insert-img-label-text">📷 插入圖片</span>
         <input type="file" accept="image/*" multiple onchange="memoInsertImagesAtCursor(this)" style="display:none;">
       </label>
     </div>
@@ -4420,6 +4421,10 @@ var memoDoc = { body: '', updatedAt: 0 };
 var memoDbRef = null;
 var memoSuppressEcho = false;
 var memoEditMode = false;
+/* 有沒有「真的還沒存到的變更」——只有這個是 true 時，切到背景／關閉分頁才需要強制存檔。
+   不然像是「打開手機相片選擇器」這種只是讓分頁暫時變成背景、內容根本沒變的情況，
+   也會被誤判成要存檔，拿舊資料去存，時機看起來完全跟使用者的操作對不上。 */
+var memoDirty = false;
 function memoDocEl(){
   return document.getElementById('memo-doc');
 }
@@ -4541,31 +4546,40 @@ function memoInitFirebase(){
     console.error('Memo Firebase init failed', e);
   }
 }
+/* 回傳 Promise<boolean>，讓呼叫端（例如插入圖片流程）可以確實知道「這次到底存成功了沒」，
+   而不是盲目假設有存到，才能做到「存完才顯示完成」而不是「存之前就先講完成」 */
 function memoSaveRemote(){
   var localOk = memoSaveLocalBackup();
-  if (memoDbRef) {
+  if (!localOk) {
+    memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
+  }
+  return new Promise(function(resolve){
+    if (!memoDbRef) { resolve(localOk); return; }
     memoSuppressEcho = true;
     try {
       var writeResult = memoDbRef.set(memoDoc);
-      if (writeResult && typeof writeResult.catch === 'function') {
+      if (writeResult && typeof writeResult.then === 'function') {
         /* .set() 是非同步的，之前只用 try/catch 只能接到「立即拋出」的錯誤，
            像圖片太大、網路異常這種寫入失敗都是走 Promise reject，完全沒被接住，
            使用者看不到任何提示，資料就這樣悄悄不見了 */
-        writeResult.catch(function(err){
+        writeResult.then(function(){
+          resolve(localOk);
+        }).catch(function(err){
           memoSuppressEcho = false;
           console.error('Memo remote save failed', err);
           memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機，請檢查網路或減少圖片數量');
+          resolve(false);
         });
+      } else {
+        resolve(localOk);
       }
     } catch(e) {
       memoSuppressEcho = false;
       console.error('Memo remote save failed', e);
       memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機');
+      resolve(false);
     }
-  }
-  if (!localOk) {
-    memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
-  }
+  });
 }
 function memoOpen(){
   document.getElementById('memo-overlay').classList.add('open');
@@ -4733,11 +4747,12 @@ function memoTrackSelection(){
   var memoAutoSaveTimer = null;
   doc.addEventListener('input', function(){
     if (!memoEditMode) return;
+    memoDirty = true;
     clearTimeout(memoAutoSaveTimer);
     memoAutoSaveTimer = setTimeout(function(){ memoCommitEdits(); }, 1200);
   });
   function memoFlushPendingSave(){
-    if (!memoEditMode) return;
+    if (!memoEditMode || !memoDirty) return;
     clearTimeout(memoAutoSaveTimer);
     memoCommitEdits();
   }
@@ -4902,11 +4917,19 @@ function memoInsertHeading(){
   memoSelectHeadingText(heading.querySelector('.memo-heading-text'));
   heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+function memoSetImgBtnBusy(busy, text){
+  var label = document.getElementById('memo-insert-img-label');
+  var labelText = document.getElementById('memo-insert-img-label-text');
+  if (label) label.classList.toggle('busy', busy);
+  if (labelText) labelText.textContent = text || (busy ? '處理中…' : '📷 插入圖片');
+}
 function memoInsertImagesAtCursor(input){
   var files = Array.prototype.slice.call(input.files || []);
   if (!files.length) return;
   var doc = memoDocEl();
   doc.focus();
+  memoSetImgBtnBusy(true, files.length > 1 ? '處理中… (0/' + files.length + ')' : '處理中…');
+  var doneCount = 0;
   var sel = window.getSelection();
   var range;
   if (memoSavedRange && doc.contains(memoSavedRange.startContainer)) {
@@ -4919,8 +4942,20 @@ function memoInsertImagesAtCursor(input){
   sel.removeAllRanges();
   sel.addRange(range);
   function insertOne(i){
-    if (i >= files.length) { memoTrackSelection(); return; }
+    if (i >= files.length) {
+      memoTrackSelection();
+      memoDirty = true;
+      memoSetImgBtnBusy(true, '儲存中…');
+      memoCommitEdits().then(function(ok){
+        memoSetImgBtnBusy(false);
+        if (ok) memoShowToast('✅ 已儲存' + (files.length > 1 ? files.length + ' 張照片' : ''));
+        /* 存檔失敗時 memoSaveRemote 內部已經跳過失敗原因的提示，這裡不用重複顯示 */
+      });
+      return;
+    }
     memoCompressImage(files[i], function(dataUrl){
+      doneCount++;
+      if (files.length > 1) memoSetImgBtnBusy(true, '處理中… (' + doneCount + '/' + files.length + ')');
       if (!dataUrl) { insertOne(i + 1); return; }
       var img = document.createElement('img');
       img.className = 'memo-inline-img';
@@ -4981,13 +5016,14 @@ function memoSanitizeHtml(html){
   return tmp.innerHTML;
 }
 function memoCommitEdits(){
+  memoDirty = false;
   var doc = memoDocEl();
-  if (!doc) return;
+  if (!doc) return Promise.resolve(false);
   var clone = doc.cloneNode(true);
   memoStripEditorChrome(clone);
   var body = memoSanitizeHtml(clone.innerHTML);
   memoDoc = { body: body, updatedAt: Date.now() };
-  memoSaveRemote();
+  return memoSaveRemote();
 }
 memoLoadLocal();
 
