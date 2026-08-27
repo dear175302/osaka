@@ -4130,6 +4130,35 @@ function mapNotesLoadLocal(){
     if (raw) mapNotes = mapNotesNormalize(JSON.parse(raw));
   } catch(e){}
 }
+/* 跟備忘錄同樣的道理：地圖筆記的照片以前也是沒壓縮直接存，這些舊資料會跟備忘錄
+   共用同一個瀏覽器的 localStorage 總容量，就算現在改的是備忘錄，也可能因為地圖筆記
+   裡還留著沒壓縮的舊照片把空間佔滿而存檔失敗。載入時一併檢查、瘦身。 */
+function mapNotesMaybeRecompressAndSave(){
+  if (mapNoteEditMode) return;
+  var tasks = [];
+  Object.keys(mapNotes).forEach(function(key){
+    (mapNotes[key] || []).forEach(function(note){
+      if (!Array.isArray(note.images)) return;
+      note.images.forEach(function(src, idx){
+        if (src && typeof src === 'string' && src.length > MEMO_BLOAT_THRESHOLD) {
+          tasks.push({ note: note, idx: idx, src: src });
+        }
+      });
+    });
+  });
+  if (!tasks.length) return;
+  var i = 0, changed = false;
+  function next(){
+    if (i >= tasks.length) { if (changed) mapNotesSaveRemote(); return; }
+    var t = tasks[i];
+    memoRecompressDataUrl(t.src, function(newSrc){
+      if (newSrc && newSrc.length < t.src.length) { t.note.images[t.idx] = newSrc; changed = true; }
+      i++;
+      next();
+    });
+  }
+  next();
+}
 function mapNotesInitFirebase(){
   if (!sbUseFirebase) return;
   if (typeof firebase === 'undefined') return;
@@ -4141,6 +4170,7 @@ function mapNotesInitFirebase(){
       mapNotesSaveLocalBackup();
       if (mapNotesSuppressEcho) { mapNotesSuppressEcho = false; return; }
       mapNotesRefreshView();
+      mapNotesMaybeRecompressAndSave();
     });
   } catch(e) {
     console.error('Map notes Firebase init failed', e);
@@ -4232,13 +4262,11 @@ function mapHandleNoteImageInput(input){
   var remaining = files.length;
   if (!remaining) return;
   files.forEach(function(file){
-    var reader = new FileReader();
-    reader.onload = function(e){
-      images.push(e.target.result);
+    memoCompressImage(file, function(dataUrl){
+      if (dataUrl) images.push(dataUrl);
       remaining--;
       if (remaining === 0) mapRenderNoteImageList(images);
-    };
-    reader.readAsDataURL(file);
+    });
   });
   input.value = '';
 }
@@ -4343,6 +4371,7 @@ function mapOpenNotesListPopup(key, forceEditable){
   if (addBtn) addBtn.style.display = mapNotesPopupEditable ? '' : 'none';
   document.getElementById('map-note-backdrop').style.display = 'block';
   document.getElementById('map-notes-list-popup').style.display = 'block';
+  mapNotesMaybeRecompressAndSave();
 }
 function mapRenderNotesListPopupContent(){
   var key = mapNotesListCurrentKey;
@@ -4470,6 +4499,59 @@ function memoCompressImage(file, cb){
   reader.onerror = function(){ cb(null); };
   reader.readAsDataURL(file);
 }
+/* 補救舊資料：壓縮功能是後來才加的，在那之前存進去的照片（或用別的裝置存的）
+   還是未壓縮的原圖，可能好幾 MB。這種舊資料只要還留著，之後隨便改個字都要整份
+   一起存回去，很容易又把容量塞爆——不管使用者當下到底有沒有動到照片。
+   所以文件一載入就順便檢查一次，把明顯超大的舊圖也重新壓縮一次瘦身。 */
+var MEMO_BLOAT_THRESHOLD = 400000; /* base64 字元數，自己壓縮出來的圖通常遠低於這個門檻 */
+function memoRecompressDataUrl(dataUrl, cb){
+  var MAX_DIM = 1440, QUALITY = 0.75;
+  var img = new Image();
+  img.onload = function(){
+    var w = img.width, h = img.height;
+    if (w > MAX_DIM || h > MAX_DIM) {
+      if (w >= h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+      else { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+    }
+    try {
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', QUALITY));
+    } catch (err) { cb(null); }
+  };
+  img.onerror = function(){ cb(null); };
+  img.src = dataUrl;
+}
+function memoRecompressBloatedImages(bodyHtml, cb){
+  var tmp = document.createElement('div');
+  tmp.innerHTML = bodyHtml || '';
+  var targets = Array.prototype.filter.call(tmp.querySelectorAll('img.memo-inline-img'), function(img){
+    return img.src && img.src.length > MEMO_BLOAT_THRESHOLD;
+  });
+  if (!targets.length) { cb(false, bodyHtml); return; }
+  var i = 0;
+  function next(){
+    if (i >= targets.length) { cb(true, tmp.innerHTML); return; }
+    var img = targets[i];
+    memoRecompressDataUrl(img.src, function(newSrc){
+      if (newSrc && newSrc.length < img.src.length) img.src = newSrc;
+      i++;
+      next();
+    });
+  }
+  next();
+}
+function memoMaybeRecompressAndSave(){
+  if (memoEditMode) return; /* 使用者正在打字的時候絕對不要偷換內容 */
+  memoRecompressBloatedImages(memoDoc.body, function(changed, newBody){
+    if (!changed) return;
+    memoDoc = { body: newBody, updatedAt: Date.now() };
+    memoSaveRemote();
+    if (!memoEditMode) memoRenderDoc();
+  });
+}
 function memoBodyIsEmpty(html){
   if (!html) return true;
   var tmp = document.createElement('div');
@@ -4537,6 +4619,7 @@ function memoInitFirebase(){
         memoSaveLocalBackup();
         if (memoSuppressEcho) { memoSuppressEcho = false; return; }
         if (!memoEditMode) memoRenderDoc();
+        memoMaybeRecompressAndSave();
       } else if (!memoBodyIsEmpty(memoDoc.body)) {
         /* 遠端還沒有資料，但本機已經有內容（例如剛從舊格式搬過來）：推上去一次 */
         memoSaveRemote();
@@ -4586,6 +4669,7 @@ function memoOpen(){
   lockBodyScroll();
   memoEditMode = false;
   memoRenderDoc();
+  memoMaybeRecompressAndSave();
 }
 function memoClose(){
   if (memoEditMode) memoCommitEdits();
@@ -4597,7 +4681,17 @@ function memoClose(){
    才不會被巢狀結構卡住 ---- */
 function memoSetSectionState(node, collapsed, animate){
   node.classList.add('memo-collapsible');
+  /* 展開／收合一個標題時，程式會把整份文件所有區塊都重新跑一次這個函式，
+     不是只處理被點到的那個標題。如果沒有這層判斷，其他明明狀態根本沒變的區塊
+     也會被迫重新「展開到全高再收合回 0」，畫面上就會看到不相干的標題跟著抖動一下。
+     所以狀態沒變就整個跳過，什麼都不動。 */
+  var already = node.dataset.memoCollapsedState === String(collapsed);
+  node.dataset.memoCollapsedState = String(collapsed);
+  if (already) return;
   if (!collapsed) {
+    node.style.display = ''; /* 還原成原本的排版方式（例如照片要 inline-block 才能一行排好幾張） */
+    node.style.marginTop = '';
+    node.style.marginBottom = '';
     var target = node.scrollHeight;
     if (animate) {
       node.style.maxHeight = '0px';
@@ -4624,6 +4718,12 @@ function memoSetSectionState(node, collapsed, animate){
       node.style.maxHeight = '0px';
       node.style.opacity = '0';
     }
+    /* 收合要真的貼齊零高度：像照片這種行內元素（inline-block）就算 max-height 設成 0，
+       還是會因為行內排版本身的行高、加上自己的 margin，在標題之間留下一截莫名的空白間隙。
+       改成 display:block 並把 margin 歸零，收合起來的標題才會真的緊貼在一起。 */
+    node.style.display = 'block';
+    node.style.marginTop = '0px';
+    node.style.marginBottom = '0px';
   }
 }
 function memoApplyCollapse(doc, animate){
@@ -5026,6 +5126,7 @@ function memoCommitEdits(){
   return memoSaveRemote();
 }
 memoLoadLocal();
+memoMaybeRecompressAndSave();
 
 
 /* ---- 景點卡片對照筆記 key（供快速選單使用） ---- */
