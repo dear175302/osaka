@@ -782,26 +782,32 @@ strong{font-weight:700;}
 .map-note-sheet-body{padding:14px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1 1 auto;min-height:0;}
 .map-note-sheet-footer{padding:12px 16px max(12px, env(safe-area-inset-bottom));flex-shrink:0;border-top:0.5px solid var(--line);background:var(--surface);}
 
-/* ---- 備忘錄（獨立於地圖，像 iOS 備忘錄：單一一份文件，可插入標題／圖片，標題可收合） ---- */
+/* ---- 備忘錄（一張一張卡片：標題＋圖片，可收合展開，改用一般表單元素而非 contenteditable，
+   避免舊版單一文件模型把「一段內容」拆成好幾個平行 DOM 節點所衍生的各種收合／點擊錯位問題） ---- */
 .memo-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .memo-edit-toggle-btn{background:var(--surface-2);color:var(--ink-2);border:0.5px solid var(--line);border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .memo-edit-toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .memo-empty-hint{font-size:12.5px;color:var(--muted);text-align:center;padding:60px 20px;line-height:1.7;}
-.memo-body-editor{min-height:200px;font-size:16px;line-height:1.7;color:var(--ink);outline:none;white-space:pre-wrap;word-break:break-word;padding-bottom:40px;}
-.memo-body-editor:empty:before{content:attr(data-placeholder);color:var(--muted);white-space:normal;}
-.memo-heading{display:flex;align-items:center;gap:7px;font-family:var(--font-serif);font-size:15.5px;font-weight:700;color:var(--ink);margin:18px 0 8px;cursor:pointer;}
-.memo-heading:first-child{margin-top:0;}
-.memo-heading-toggle{flex-shrink:0;width:26px;height:26px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:transform 0.2s ease;}
-.memo-heading[data-collapsed="false"] > .memo-heading-toggle{transform:rotate(90deg);}
-.memo-heading-text{flex:1;outline:none;}
-.memo-body-editor > .memo-collapsible{overflow:hidden;transition:max-height 0.25s ease, opacity 0.2s ease;}
-.memo-inline-img-wrap{position:relative;display:inline-block;vertical-align:top;width:22%;margin:0 2.4% 8px 0;}
-.memo-body-editor img.memo-inline-img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:10px;display:block;cursor:pointer;}
-.memo-inline-img-del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:#d64545;color:#fff;font-size:10px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.3);padding:0;}
-.memo-body-editor[contenteditable="false"] .memo-inline-img-del{display:none;}
+.memo-card-list{padding-bottom:8px;}
+.memo-card{border:0.5px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--surface);}
+.memo-card-header{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;}
+.memo-card.editing .memo-card-header{cursor:default;}
+.memo-card-toggle{flex-shrink:0;width:26px;height:26px;border:none;background:transparent;color:var(--accent);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;transition:transform 0.2s ease;}
+.memo-card:not(.collapsed) .memo-card-toggle{transform:rotate(90deg);}
+.memo-card-title-text{flex:1;font-family:var(--font-serif);font-size:15.5px;font-weight:700;color:var(--ink);word-break:break-word;}
+.memo-card-title-text:empty:before{content:'(未命名)';color:var(--muted);font-weight:400;}
+.memo-card-title-input{flex:1;font-family:var(--font-serif);font-size:15.5px;font-weight:700;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;outline:none;padding:4px 0;min-width:0;}
+.memo-card-delete-btn{flex-shrink:0;width:26px;height:26px;border:none;background:transparent;color:#d64545;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+.memo-card-body{overflow:hidden;max-height:2000px;opacity:1;transition:max-height 0.3s ease, opacity 0.25s ease, padding 0.3s ease;padding:0 14px 14px;}
+.memo-card.collapsed .memo-card-body{max-height:0;opacity:0;padding-top:0;padding-bottom:0;}
+.memo-card-images{display:flex;flex-wrap:wrap;}
+.memo-card-img-wrap{position:relative;display:inline-block;vertical-align:top;width:22%;margin:0 2.4% 8px 0;}
+.memo-card-img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:10px;display:block;cursor:pointer;}
+.memo-card-img-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:#d64545;color:#fff;font-size:11px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.35);padding:0;display:flex;align-items:center;justify-content:center;}
+.memo-card-add-img-btn{width:22%;margin:0 2.4% 8px 0;aspect-ratio:1/1;border-radius:10px;border:1px dashed rgba(196,98,45,0.35);background:rgba(196,98,45,0.07);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;line-height:1.3;padding:0;}
+.memo-card-add-img-btn.busy{opacity:0.6;pointer-events:none;}
 .memo-toolbar{display:flex;gap:8px;padding:10px var(--pad) max(10px, env(safe-area-inset-bottom));border-top:0.5px solid var(--line);background:var(--surface);flex-shrink:0;}
-.memo-insert-img-btn{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);background:rgba(196,98,45,0.07);border:1px dashed rgba(196,98,45,0.35);border-radius:9px;padding:9px;cursor:pointer;font-family:inherit;}
-.memo-insert-img-btn.busy{opacity:0.6;pointer-events:none;}
+.memo-add-card-btn{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);background:rgba(196,98,45,0.07);border:1px dashed rgba(196,98,45,0.35);border-radius:9px;padding:9px;cursor:pointer;font-family:inherit;}
 #memo-overlay .sb-panel{position:relative;}
 .memo-toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
 .memo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -2668,15 +2674,11 @@ window.closeLB = function(pfx) {
       </div>
     </div>
     <div class="sb-body">
-      <div id="memo-doc" class="memo-body-editor" data-placeholder="還沒有內容，點右上角「✏️ 編輯」開始輸入…"></div>
+      <div id="memo-card-list" class="memo-card-list"></div>
     </div>
     <div class="memo-toast" id="memo-toast"></div>
     <div class="memo-toolbar" id="memo-toolbar" style="display:none;">
-      <button type="button" class="memo-insert-img-btn" onclick="memoInsertHeading()">🔖 插入標題</button>
-      <label class="memo-insert-img-btn" id="memo-insert-img-label">
-        <span id="memo-insert-img-label-text">📷 插入圖片</span>
-        <input type="file" accept="image/*" multiple onchange="memoInsertImagesAtCursor(this)" style="display:none;">
-      </label>
+      <button type="button" class="memo-add-card-btn" onclick="memoAddCard()">➕ 新增卡片</button>
     </div>
   </div>
 </div>
@@ -4445,20 +4447,16 @@ function mapDeleteNote(key, index){
 }
 mapNotesLoadLocal();
 
-/* ---- 備忘錄（獨立於地圖，像 iOS 備忘錄：單一一份文件，可插入標題／圖片，標題可收合展開） ---- */
-var memoDoc = { body: '', updatedAt: 0 };
-var memoDbRef = null;
-var memoSuppressEcho = false;
+/* ---- 備忘錄（一張一張卡片：標題＋圖片，可收合展開，改用一般表單元素而非 contenteditable，
+   避免舊版單一文件模型把「一段內容」拆成好幾個平行 DOM 節點所衍生的各種收合／點擊錯位問題） ---- */
+var memoCards = [];
+var memoCardsDbRef = null;
+var memoCardsSuppressEcho = false;
 var memoEditMode = false;
-/* 有沒有「真的還沒存到的變更」——只有這個是 true 時，切到背景／關閉分頁才需要強制存檔。
-   不然像是「打開手機相片選擇器」這種只是讓分頁暫時變成背景、內容根本沒變的情況，
-   也會被誤判成要存檔，拿舊資料去存，時機看起來完全跟使用者的操作對不上。 */
 var memoDirty = false;
-function memoDocEl(){
-  return document.getElementById('memo-doc');
-}
+var memoAutoSaveTimer = null;
 function memoSaveLocalBackup(){
-  try { localStorage.setItem('memodoc_osaka2026', JSON.stringify(memoDoc)); return true; } catch(e){ return false; }
+  try { localStorage.setItem('memocards_osaka2026', JSON.stringify(memoCards)); return true; } catch(e){ return false; }
 }
 var memoToastTimer = null;
 function memoShowToast(msg){
@@ -4490,7 +4488,7 @@ function memoCompressImage(file, cb){
         ctx.drawImage(img, 0, 0, w, h);
         cb(canvas.toDataURL('image/jpeg', QUALITY));
       } catch (err) {
-        cb(e.target.result); /* 壓縮失敗就退回原圖，至少不會整個插入失敗 */
+        cb(e.target.result);
       }
     };
     img.onerror = function(){ cb(e.target.result); };
@@ -4499,10 +4497,7 @@ function memoCompressImage(file, cb){
   reader.onerror = function(){ cb(null); };
   reader.readAsDataURL(file);
 }
-/* 補救舊資料：壓縮功能是後來才加的，在那之前存進去的照片（或用別的裝置存的）
-   還是未壓縮的原圖，可能好幾 MB。這種舊資料只要還留著，之後隨便改個字都要整份
-   一起存回去，很容易又把容量塞爆——不管使用者當下到底有沒有動到照片。
-   所以文件一載入就順便檢查一次，把明顯超大的舊圖也重新壓縮一次瘦身。 */
+/* 補救舊資料：把明顯超大的舊圖重新壓縮一次瘦身，避免隨便改個標題就整份存檔失敗。 */
 var MEMO_BLOAT_THRESHOLD = 400000; /* base64 字元數，自己壓縮出來的圖通常遠低於這個門檻 */
 function memoRecompressDataUrl(dataUrl, cb){
   var MAX_DIM = 1440, QUALITY = 0.75;
@@ -4524,103 +4519,135 @@ function memoRecompressDataUrl(dataUrl, cb){
   img.onerror = function(){ cb(null); };
   img.src = dataUrl;
 }
-function memoRecompressBloatedImages(bodyHtml, cb){
-  var tmp = document.createElement('div');
-  tmp.innerHTML = bodyHtml || '';
-  var targets = Array.prototype.filter.call(tmp.querySelectorAll('img.memo-inline-img'), function(img){
-    return img.src && img.src.length > MEMO_BLOAT_THRESHOLD;
+function memoMaybeRecompressAndSave(){
+  if (memoEditMode) return; /* 使用者正在編輯的時候絕對不要偷換內容 */
+  var targets = [];
+  memoCards.forEach(function(card){
+    (card.images || []).forEach(function(src, idx){
+      if (src && src.length > MEMO_BLOAT_THRESHOLD) targets.push({ card: card, idx: idx, src: src });
+    });
   });
-  if (!targets.length) { cb(false, bodyHtml); return; }
-  var i = 0;
+  if (!targets.length) return;
+  var i = 0, changed = false;
   function next(){
-    if (i >= targets.length) { cb(true, tmp.innerHTML); return; }
-    var img = targets[i];
-    memoRecompressDataUrl(img.src, function(newSrc){
-      if (newSrc && newSrc.length < img.src.length) img.src = newSrc;
+    if (i >= targets.length) {
+      if (changed) {
+        memoSaveRemote();
+        if (!memoEditMode) memoCardsRender();
+      }
+      return;
+    }
+    var t = targets[i];
+    memoRecompressDataUrl(t.src, function(newSrc){
+      if (newSrc && newSrc.length < t.src.length) { t.card.images[t.idx] = newSrc; changed = true; }
       i++;
       next();
     });
   }
   next();
 }
-function memoMaybeRecompressAndSave(){
-  if (memoEditMode) return; /* 使用者正在打字的時候絕對不要偷換內容 */
-  memoRecompressBloatedImages(memoDoc.body, function(changed, newBody){
-    if (!changed) return;
-    memoDoc = { body: newBody, updatedAt: Date.now() };
-    memoSaveRemote();
-    if (!memoEditMode) memoRenderDoc();
+function memoNewCardId(){
+  return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function memoNormalizeCards(data){
+  if (!data) return [];
+  var arr;
+  if (Array.isArray(data)) {
+    arr = data;
+  } else if (typeof data === 'object') {
+    /* Firebase 會把「有洞的陣列」存成物件，這裡轉回一般陣列 */
+    arr = Object.keys(data).sort(function(a, b){ return a - b; }).map(function(k){ return data[k]; });
+  } else {
+    return [];
+  }
+  return arr.filter(function(c){ return c && typeof c === 'object'; }).map(function(c){
+    return {
+      id: c.id || memoNewCardId(),
+      title: typeof c.title === 'string' ? c.title : '',
+      images: Array.isArray(c.images) ? c.images.filter(function(s){ return typeof s === 'string' && s; }) : [],
+      collapsed: !!c.collapsed
+    };
   });
 }
-function memoBodyIsEmpty(html){
-  if (!html) return true;
-  var tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  var hasImg = !!tmp.querySelector('img');
-  var text = (tmp.textContent || '').trim();
-  return !hasImg && !text;
-}
-function memoLegacyToBodyHtml(text, images){
-  var parts = [];
-  if (text) parts.push(sbEsc(text).replace(/\n/g, '<br>'));
-  images.forEach(function(src){ parts.push('<img class="memo-inline-img" src="' + src + '">'); });
-  return parts.join('<br>');
-}
-/* 把舊版「一份一份備忘錄」的資料，依更新時間先後合併成一份文件：
-   每則舊備忘錄的標題變成一個可收合的標題區塊，內容接在標題後面。資料不會遺失。 */
-function memoBuildMergedBodyFromLegacy(oldNotesObj){
-  if (!oldNotesObj) return '';
-  var ids = Object.keys(oldNotesObj).sort(function(a, b){
-    return (oldNotesObj[a].updatedAt || 0) - (oldNotesObj[b].updatedAt || 0);
-  });
-  var parts = [];
-  ids.forEach(function(id){
-    var m = oldNotesObj[id];
-    if (!m || typeof m !== 'object') return;
-    var bodyHtml = (typeof m.body === 'string') ? m.body : memoLegacyToBodyHtml(m.text || '', Array.isArray(m.images) ? m.images : []);
-    var empty = memoBodyIsEmpty(bodyHtml);
-    if (!m.title && empty) return;
-    if (m.title) parts.push('<div class="memo-heading"><span class="memo-heading-text">' + sbEsc(m.title) + '</span></div>');
-    if (!empty) parts.push('<div>' + bodyHtml + '</div>');
-  });
-  return parts.join('');
-}
-function memoNormalizeDoc(data){
-  if (!data || typeof data !== 'object' || typeof data.body !== 'string') return { body: '', updatedAt: 0 };
-  return { body: data.body, updatedAt: data.updatedAt || 0 };
-}
-function memoLoadLocal(){
+/* 從舊版本（單一文件 contenteditable／更早的一份一份備忘錄）搬移資料，只做這一次，
+   而且完全不刪除舊的 localStorage 資料，當作安全備份。 */
+function memoMigrateFromLegacy(){
+  var migrated = [];
   try {
-    var raw = localStorage.getItem('memodoc_osaka2026');
-    if (raw) {
-      memoDoc = memoNormalizeDoc(JSON.parse(raw));
-      return;
-    }
-    /* 找不到新格式資料時，嘗試把舊版（一份一份的備忘錄）自動搬過來一次 */
-    var legacyRaw = localStorage.getItem('memos_osaka2026');
-    if (legacyRaw) {
-      var body = memoBuildMergedBodyFromLegacy(JSON.parse(legacyRaw));
-      if (!memoBodyIsEmpty(body)) {
-        memoDoc = { body: body, updatedAt: Date.now() };
-        memoSaveLocalBackup();
+    var docRaw = localStorage.getItem('memodoc_osaka2026');
+    if (docRaw) {
+      var docData = JSON.parse(docRaw);
+      var html = (docData && typeof docData.body === 'string') ? docData.body : '';
+      if (html) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var current = null;
+        Array.prototype.forEach.call(tmp.childNodes, function(node){
+          if (node.nodeType === 1 && node.classList && node.classList.contains('memo-heading')) {
+            var textEl = node.querySelector('.memo-heading-text');
+            var title = ((textEl ? textEl.textContent : node.textContent) || '').trim();
+            current = { id: memoNewCardId(), title: title, images: [], collapsed: false };
+            migrated.push(current);
+          } else if (node.nodeType === 1) {
+            if (!current) { current = { id: memoNewCardId(), title: '', images: [], collapsed: false }; migrated.push(current); }
+            var imgs = (node.classList && node.classList.contains('memo-inline-img'))
+              ? [node]
+              : Array.prototype.slice.call(node.querySelectorAll ? node.querySelectorAll('img.memo-inline-img') : []);
+            imgs.forEach(function(img){ if (img.src) current.images.push(img.src); });
+          }
+        });
       }
     }
   } catch(e){}
+  migrated = migrated.filter(function(c){ return c.title || c.images.length; });
+  if (!migrated.length) {
+    try {
+      var legacyRaw = localStorage.getItem('memos_osaka2026');
+      if (legacyRaw) {
+        var legacy = JSON.parse(legacyRaw);
+        Object.keys(legacy || {}).sort(function(a, b){
+          return (legacy[a].updatedAt || 0) - (legacy[b].updatedAt || 0);
+        }).forEach(function(id){
+          var m = legacy[id];
+          if (!m || typeof m !== 'object') return;
+          var title = m.title || (m.text ? String(m.text).split('\n')[0].slice(0, 40) : '');
+          var images = Array.isArray(m.images) ? m.images.slice() : [];
+          if (!title && !images.length) return;
+          migrated.push({ id: memoNewCardId(), title: title, images: images, collapsed: false });
+        });
+      }
+    } catch(e){}
+  }
+  return migrated;
+}
+function memoLoadLocal(){
+  try {
+    var raw = localStorage.getItem('memocards_osaka2026');
+    if (raw) {
+      memoCards = memoNormalizeCards(JSON.parse(raw));
+      return;
+    }
+  } catch(e){}
+  var migrated = memoMigrateFromLegacy();
+  if (migrated.length) {
+    memoCards = migrated;
+    memoSaveLocalBackup();
+  }
 }
 function memoInitFirebase(){
   if (!sbUseFirebase) return;
   if (typeof firebase === 'undefined') return;
   try {
-    memoDbRef = firebase.database().ref('memoDoc/' + sbTripId);
-    memoDbRef.on('value', function(snap){
+    memoCardsDbRef = firebase.database().ref('memoCards/' + sbTripId);
+    memoCardsDbRef.on('value', function(snap){
       var data = snap.val();
-      if (data && typeof data === 'object' && typeof data.body === 'string') {
-        memoDoc = memoNormalizeDoc(data);
+      if (data) {
+        memoCards = memoNormalizeCards(data);
         memoSaveLocalBackup();
-        if (memoSuppressEcho) { memoSuppressEcho = false; return; }
-        if (!memoEditMode) memoRenderDoc();
+        if (memoCardsSuppressEcho) { memoCardsSuppressEcho = false; return; }
+        if (!memoEditMode) memoCardsRender();
         memoMaybeRecompressAndSave();
-      } else if (!memoBodyIsEmpty(memoDoc.body)) {
+      } else if (memoCards.length) {
         /* 遠端還沒有資料，但本機已經有內容（例如剛從舊格式搬過來）：推上去一次 */
         memoSaveRemote();
       }
@@ -4629,501 +4656,237 @@ function memoInitFirebase(){
     console.error('Memo Firebase init failed', e);
   }
 }
-/* 回傳 Promise<boolean>，讓呼叫端（例如插入圖片流程）可以確實知道「這次到底存成功了沒」，
-   而不是盲目假設有存到，才能做到「存完才顯示完成」而不是「存之前就先講完成」 */
+/* 回傳 Promise<boolean>：只代表「本機存好了沒」，不會等雲端回應才 resolve。
+   手機網路不穩、訊號差的時候，Firebase 寫入的來回可能要等很久（甚至像是卡住不動），
+   但本機其實老早就存好了——如果連「顯示已完成」都要卡在等雲端回應，
+   使用者會一直看著「處理中…」動彈不得，誤以為根本沒有存到。
+   所以雲端同步改成背景執行：本機一存好就馬上回報完成，雲端寫入失敗時再另外跳一次提示。 */
 function memoSaveRemote(){
   var localOk = memoSaveLocalBackup();
   if (!localOk) {
     memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
   }
-  return new Promise(function(resolve){
-    if (!memoDbRef) { resolve(localOk); return; }
-    memoSuppressEcho = true;
+  if (memoCardsDbRef) {
+    memoCardsSuppressEcho = true;
     try {
-      var writeResult = memoDbRef.set(memoDoc);
+      var writeResult = memoCardsDbRef.set(memoCards);
       if (writeResult && typeof writeResult.then === 'function') {
-        /* .set() 是非同步的，之前只用 try/catch 只能接到「立即拋出」的錯誤，
-           像圖片太大、網路異常這種寫入失敗都是走 Promise reject，完全沒被接住，
-           使用者看不到任何提示，資料就這樣悄悄不見了 */
-        writeResult.then(function(){
-          resolve(localOk);
-        }).catch(function(err){
-          memoSuppressEcho = false;
+        writeResult.catch(function(err){
+          memoCardsSuppressEcho = false;
           console.error('Memo remote save failed', err);
           memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機，請檢查網路或減少圖片數量');
-          resolve(false);
         });
-      } else {
-        resolve(localOk);
       }
     } catch(e) {
-      memoSuppressEcho = false;
+      memoCardsSuppressEcho = false;
       console.error('Memo remote save failed', e);
       memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機');
-      resolve(false);
     }
-  });
+  }
+  return Promise.resolve(localOk);
 }
+function memoCommitEdits(){
+  memoDirty = false;
+  return memoSaveRemote();
+}
+/* 防抖自動存檔：打完字停頓一下就存一次，切到背景／關閉分頁時也會強制立刻存檔（flush），
+   確保不管用什麼方式離開都不會遺失內容。 */
+function memoScheduleSave(){
+  memoDirty = true;
+  clearTimeout(memoAutoSaveTimer);
+  memoAutoSaveTimer = setTimeout(function(){ memoCommitEdits(); }, 1200);
+}
+function memoFlushPendingSave(){
+  if (!memoDirty) return;
+  clearTimeout(memoAutoSaveTimer);
+  memoCommitEdits();
+}
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden') memoFlushPendingSave();
+});
+window.addEventListener('pagehide', memoFlushPendingSave);
 function memoOpen(){
   document.getElementById('memo-overlay').classList.add('open');
   lockBodyScroll();
   memoEditMode = false;
-  memoRenderDoc();
+  memoCardsRender();
   memoMaybeRecompressAndSave();
 }
 function memoClose(){
-  if (memoEditMode) memoCommitEdits();
+  memoFlushPendingSave();
   document.getElementById('memo-overlay').classList.remove('open');
   unlockBodyScroll();
 }
-/* ---- 標題可收合展開：用一個 JS pass 依「標題→下一個標題之前」把同一組的內容顯示/隱藏，
-   不用把內容實際包進巢狀容器裡，這樣使用者在 contenteditable 打字、按 Enter 分段時
-   才不會被巢狀結構卡住 ---- */
-function memoSetSectionState(node, collapsed, animate){
-  node.classList.add('memo-collapsible');
-  /* 展開／收合一個標題時，程式會把整份文件所有區塊都重新跑一次這個函式，
-     不是只處理被點到的那個標題。如果沒有這層判斷，其他明明狀態根本沒變的區塊
-     也會被迫重新「展開到全高再收合回 0」，畫面上就會看到不相干的標題跟著抖動一下。
-     所以狀態沒變就整個跳過，什麼都不動。 */
-  var already = node.dataset.memoCollapsedState === String(collapsed);
-  node.dataset.memoCollapsedState = String(collapsed);
-  if (already) return;
-  if (!collapsed) {
-    node.style.display = ''; /* 還原成原本的排版方式（例如照片要 inline-block 才能一行排好幾張） */
-    node.style.marginTop = '';
-    node.style.marginBottom = '';
-    var target = node.scrollHeight;
-    if (animate) {
-      node.style.maxHeight = '0px';
-      node.style.opacity = '0';
-      void node.offsetHeight; /* 強制 reflow，讓瀏覽器先套用「收合」起始狀態，接下來的變更才會真的觸發過場動畫 */
-      node.style.maxHeight = target + 'px';
-      node.style.opacity = '1';
-      node.addEventListener('transitionend', function handler(e){
-        if (e.propertyName !== 'max-height') return;
-        node.style.maxHeight = 'none'; /* 展開後拿掉固定高度，避免之後內容變動（例如圖片載入）被裁掉 */
-        node.removeEventListener('transitionend', handler);
-      });
-    } else {
-      node.style.maxHeight = 'none';
-      node.style.opacity = '1';
-    }
-  } else {
-    if (animate) {
-      node.style.maxHeight = node.scrollHeight + 'px';
-      void node.offsetHeight;
-      node.style.maxHeight = '0px';
-      node.style.opacity = '0';
-    } else {
-      node.style.maxHeight = '0px';
-      node.style.opacity = '0';
-    }
-    /* 收合要真的貼齊零高度：像照片這種行內元素（inline-block）就算 max-height 設成 0，
-       還是會因為行內排版本身的行高、加上自己的 margin，在標題之間留下一截莫名的空白間隙。
-       改成 display:block 並把 margin 歸零，收合起來的標題才會真的緊貼在一起。 */
-    node.style.display = 'block';
-    node.style.marginTop = '0px';
-    node.style.marginBottom = '0px';
-  }
-}
-function memoApplyCollapse(doc, animate){
-  var collapsed = false;
-  Array.prototype.slice.call(doc.children).forEach(function(node){
-    if (node.classList && node.classList.contains('memo-heading')) {
-      collapsed = node.dataset.collapsed !== 'false';
-      node.style.display = '';
-      return;
-    }
-    memoSetSectionState(node, collapsed, animate);
-  });
-}
-function memoShowAllSections(doc){
-  Array.prototype.slice.call(doc.children).forEach(function(node){
-    node.style.display = '';
-    node.style.maxHeight = '';
-    node.style.opacity = '';
-    node.classList.remove('memo-collapsible');
-  });
-}
-function memoResetCollapseState(doc){
-  Array.prototype.slice.call(doc.querySelectorAll('.memo-heading')).forEach(function(h){ h.dataset.collapsed = 'true'; });
-}
-/* ---- 標題收合鈕／圖片縮圖＋刪除鈕：儲存的資料只存單純的 <div class="memo-heading"><span>文字</span></div>
-   跟 <img>，收合鈕跟圖片刪除鈕只在畫面上動態補上去（用 contenteditable="false" 標成不可編輯的
-   獨立區塊，文字游標會直接跳過，不會插進中間），存檔前再拆掉，儲存格式維持乾淨 ---- */
-function memoEnsureHeadingToggle(heading){
-  if (heading.querySelector('.memo-heading-toggle')) return;
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'memo-heading-toggle';
-  btn.setAttribute('contenteditable', 'false');
-  btn.textContent = '▸';
-  heading.insertBefore(btn, heading.firstChild);
-  if (heading.dataset.collapsed === undefined) heading.dataset.collapsed = 'true';
-}
-function memoEnsureHeadingToggles(root){
-  Array.prototype.slice.call(root.querySelectorAll('.memo-heading')).forEach(memoEnsureHeadingToggle);
-}
-function memoEnsureImageWrapper(img){
-  var wrap = document.createElement('span');
-  wrap.className = 'memo-inline-img-wrap';
-  wrap.setAttribute('contenteditable', 'false');
-  img.parentNode.insertBefore(wrap, img);
-  wrap.appendChild(img);
-  var delBtn = document.createElement('button');
-  delBtn.type = 'button';
-  delBtn.className = 'memo-inline-img-del';
-  delBtn.setAttribute('contenteditable', 'false');
-  delBtn.textContent = '✕';
-  wrap.appendChild(delBtn);
-}
-function memoWrapBareImages(root){
-  Array.prototype.slice.call(root.querySelectorAll('img.memo-inline-img')).forEach(function(img){
-    if (!img.closest('.memo-inline-img-wrap')) memoEnsureImageWrapper(img);
-  });
-}
-function memoStripEditorChrome(root){
-  Array.prototype.slice.call(root.querySelectorAll('.memo-inline-img-del')).forEach(function(btn){ btn.remove(); });
-  Array.prototype.slice.call(root.querySelectorAll('.memo-heading-toggle')).forEach(function(btn){ btn.remove(); });
-  Array.prototype.slice.call(root.querySelectorAll('.memo-inline-img-wrap')).forEach(function(wrap){
-    var img = wrap.querySelector('img.memo-inline-img');
-    if (img) wrap.parentNode.insertBefore(img, wrap);
-    wrap.remove();
-  });
-}
-function memoRenderDoc(){
-  var doc = memoDocEl();
-  if (!doc) return;
-  doc.innerHTML = memoDoc.body || '';
-  memoEnsureHeadingToggles(doc);
-  memoWrapBareImages(doc);
-  var toolbar = document.getElementById('memo-toolbar');
-  var toggleBtn = document.getElementById('memo-edit-toggle-btn');
-  if (memoEditMode) {
-    doc.setAttribute('contenteditable', 'true');
-    memoShowAllSections(doc);
-    if (toolbar) toolbar.style.display = '';
-    if (toggleBtn) { toggleBtn.textContent = '✓ 完成'; toggleBtn.classList.add('active'); }
-  } else {
-    doc.setAttribute('contenteditable', 'false');
-    memoResetCollapseState(doc);
-    memoApplyCollapse(doc);
-    if (toolbar) toolbar.style.display = 'none';
-    if (toggleBtn) { toggleBtn.textContent = '✏️ 編輯'; toggleBtn.classList.remove('active'); }
-  }
-  memoSavedRange = null;
-}
 function memoToggleEditMode(){
   if (memoEditMode) {
-    memoCommitEdits();
+    memoFlushPendingSave();
     memoEditMode = false;
   } else {
     memoEditMode = true;
   }
-  memoRenderDoc();
+  memoCardsRender();
 }
-/* ---- 內文編輯區：記錄游標位置，讓「插入標題／插入圖片」可以插入在使用者目前打字的地方；
-   點標題收合鈕＝收合展開該區塊；編輯模式下點圖片＝放大檢視，點右上角 ✕＝直接移除該圖片 ---- */
-var memoSavedRange = null;
-function memoTrackSelection(){
-  var sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  var range = sel.getRangeAt(0);
-  var doc = memoDocEl();
-  if (doc && doc.contains(range.commonAncestorContainer)) {
-    memoSavedRange = range.cloneRange();
-  }
+function memoFindCard(id){
+  for (var i = 0; i < memoCards.length; i++) { if (memoCards[i].id === id) return memoCards[i]; }
+  return null;
 }
-(function(){
-  var doc = document.getElementById('memo-doc');
-  if (!doc) return;
-  ['keyup', 'mouseup', 'touchend', 'input'].forEach(function(evt){
-    doc.addEventListener(evt, memoTrackSelection);
-  });
-  /* 自動存檔：以前只有「按完成／關閉面板」才會存檔，如果使用者打完字後
-     直接切走 App、鎖螢幕、或瀏覽器被系統回收，內容會整個不見。
-     現在改成打字時每停頓一下就自動存一次，加上切到背景／關閉分頁時
-     強制立刻存檔（flush），確保不管用什麼方式離開都不會遺失內容。 */
-  var memoAutoSaveTimer = null;
-  doc.addEventListener('input', function(){
-    if (!memoEditMode) return;
-    memoDirty = true;
-    clearTimeout(memoAutoSaveTimer);
-    memoAutoSaveTimer = setTimeout(function(){ memoCommitEdits(); }, 1200);
-  });
-  function memoFlushPendingSave(){
-    if (!memoEditMode || !memoDirty) return;
-    clearTimeout(memoAutoSaveTimer);
-    memoCommitEdits();
-  }
-  document.addEventListener('visibilitychange', function(){
-    if (document.visibilityState === 'hidden') memoFlushPendingSave();
-  });
-  window.addEventListener('pagehide', memoFlushPendingSave);
-  doc.addEventListener('click', function(e){
-    var toggleBtn = e.target && e.target.closest ? e.target.closest('.memo-heading-toggle') : null;
-    if (toggleBtn && !memoEditMode) {
-      var heading = toggleBtn.closest('.memo-heading');
-      if (heading) {
-        heading.dataset.collapsed = (heading.dataset.collapsed !== 'false') ? 'false' : 'true';
-        memoApplyCollapse(doc, true);
-      }
-      return;
-    }
-    var delBtn = e.target && e.target.closest ? e.target.closest('.memo-inline-img-del') : null;
-    if (delBtn && memoEditMode) {
-      var wrap = delBtn.closest('.memo-inline-img-wrap');
-      if (wrap) wrap.remove();
-      return;
-    }
-    var img = e.target && e.target.closest ? e.target.closest('img.memo-inline-img') : null;
-    if (img && doc.contains(img)) {
-      var allImgs = Array.prototype.slice.call(doc.querySelectorAll('img.memo-inline-img'));
-      var gallery = allImgs.map(function(im){ return im.src; });
-      var idx = allImgs.indexOf(img);
-      mapShowLightboxImg(img.src, gallery, idx);
-    }
-  });
-  /* 標題文字視為單行：在標題裡按 Enter 時，瀏覽器預設的分段行為不可靠
-     （有時會在同一個標題 div 裡多插一段文字，而不是換到下面的內容），
-     所以攔截下來，改成直接把游標移到標題後面那一行（沒有的話就新建一行） */
-  doc.addEventListener('keydown', function(e){
-    if (e.key !== 'Enter') return;
-    var sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    var node = sel.getRangeAt(0).startContainer;
-    var el = node.nodeType === 1 ? node : node.parentElement;
-    var headingText = el ? el.closest('.memo-heading-text') : null;
-    if (!headingText) return;
-    e.preventDefault();
-    var heading = headingText.closest('.memo-heading');
-    var next = heading.nextElementSibling;
-    if (!next) {
-      next = document.createElement('div');
-      next.appendChild(document.createElement('br'));
-      heading.parentNode.insertBefore(next, heading.nextSibling);
-    }
-    var range = document.createRange();
-    range.selectNodeContents(next);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    memoTrackSelection();
-  });
-})();
-function memoBuildHeadingEl(text){
-  var heading = document.createElement('div');
-  heading.className = 'memo-heading';
-  heading.dataset.collapsed = 'false';
-  var toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'memo-heading-toggle';
-  toggle.setAttribute('contenteditable', 'false');
-  toggle.textContent = '▸';
-  var textSpan = document.createElement('span');
-  textSpan.className = 'memo-heading-text';
-  textSpan.textContent = text;
-  heading.appendChild(toggle);
-  heading.appendChild(textSpan);
-  return heading;
+function memoAddCard(){
+  var card = { id: memoNewCardId(), title: '', images: [], collapsed: false };
+  memoCards.push(card);
+  memoCardsRender();
+  memoScheduleSave();
+  var wrap = document.getElementById('memo-card-list');
+  var input = wrap ? wrap.querySelector('.memo-card-title-input[data-id="' + card.id + '"]') : null;
+  if (input) input.focus();
 }
-function memoFindTopLevelChild(doc, node){
-  while (node && node.parentNode !== doc) node = node.parentNode;
-  return (node && node !== doc) ? node : null;
-}
-function memoSelectHeadingText(textSpan){
-  var range = document.createRange();
-  range.selectNodeContents(textSpan);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  memoDocEl().focus();
-  memoTrackSelection();
-}
-/* ---- 插入標題：
-   1) 如果使用者剛剛反白選取了一段文字（例如打完一行字後選取它）再點「插入標題」，
-      就把反白的內容轉成標題（圖片會保留，移到標題下面，不會被吃掉）。
-      反白範圍可能橫跨好幾個「最上層節點」——例如一行文字後面接著一張圖片，
-      這兩者其實是各自獨立的最上層節點，不是同一個容器，所以要整段掃過去蒐集，
-      不能只抓選取起點那一個節點，不然圖片會憑空消失。
-   2) 沒有反白選取的話，就在目前游標所在那一行的位置插入新標題——
-      游標在第一行就會插進第一行、游標在最後一行就會接在最後面，不會固定跑到文件最尾端。 ---- */
-function memoTopLevelNodesInRange(doc, range){
-  var nodes = [];
-  Array.prototype.forEach.call(doc.childNodes, function(child){
-    if (range.intersectsNode(child)) nodes.push(child);
-  });
-  return nodes;
-}
-function memoConvertSelectionToHeading(range){
-  var doc = memoDocEl();
-  var text = range.toString().trim();
-  var nodes = memoTopLevelNodesInRange(doc, range);
-  if (!nodes.length) return false;
-  var imgWraps = [];
-  nodes.forEach(function(n){
-    if (n.nodeType !== 1) return;
-    if (n.classList && n.classList.contains('memo-inline-img-wrap')) imgWraps.push(n);
-    else if (n.querySelectorAll) imgWraps = imgWraps.concat(Array.prototype.slice.call(n.querySelectorAll('.memo-inline-img-wrap')));
-  });
-  var heading = memoBuildHeadingEl(text || '新標題');
-  doc.insertBefore(heading, nodes[0]);
-  nodes.forEach(function(n){ if (n.parentNode === doc) doc.removeChild(n); });
-  if (imgWraps.length) {
-    var contentLine = document.createElement('div');
-    imgWraps.forEach(function(w){ contentLine.appendChild(w); });
-    doc.insertBefore(contentLine, heading.nextSibling);
-  }
-  memoSelectHeadingText(heading.querySelector('.memo-heading-text'));
-  heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  return true;
-}
-function memoInsertHeading(){
-  var doc = memoDocEl();
-  if (!doc || !memoEditMode) return;
-  var range = (memoSavedRange && doc.contains(memoSavedRange.startContainer)) ? memoSavedRange.cloneRange() : null;
-
-  /* 有反白選取的文字：把反白內容轉成標題 */
-  if (range && !range.collapsed) {
-    if (memoConvertSelectionToHeading(range)) return;
-  }
-
-  var heading = memoBuildHeadingEl('新標題');
-  var refChild = range ? memoFindTopLevelChild(doc, range.startContainer) : null;
-  if (!refChild) {
-    /* 文件是空的，或抓不到目前游標位置：直接放在最後面 */
-    doc.appendChild(heading);
-    var emptyLine = document.createElement('div');
-    emptyLine.appendChild(document.createElement('br'));
-    doc.appendChild(emptyLine);
-  } else {
-    var fullText = refChild.textContent || '';
-    var pre = range.cloneRange();
-    pre.selectNodeContents(refChild);
-    pre.setEnd(range.startContainer, range.startOffset);
-    var offsetFromStart = pre.toString().length;
-    var nearEnd = fullText.length === 0 || offsetFromStart >= fullText.length / 2;
-    if (nearEnd) {
-      doc.insertBefore(heading, refChild.nextSibling);
-      if (!heading.nextSibling) {
-        var trailingLine = document.createElement('div');
-        trailingLine.appendChild(document.createElement('br'));
-        doc.appendChild(trailingLine);
-      }
+/* 收合展開的動畫：CSS 原本固定用一個很大的 max-height（2000px）當展開高度，
+   但實際內容常常只有兩三百 px 高——收合時瀏覽器要從 2000 這個假數字開始轉場，
+   結果變成「動畫前面 8 成時間畫面完全沒變化（因為還沒轉到內容實際高度），
+   最後一小段時間才整個瞬間收起來」，看起來就是明顯的頓一下，不是真的在效能上卡頓。
+   改成先量出目前內容的真實高度，動畫才會整段時間都跟著實際內容平順地縮放。 */
+function memoCardToggleCollapse(id){
+  var card = memoFindCard(id);
+  if (!card) return;
+  var willCollapse = !card.collapsed;
+  var el = document.querySelector('.memo-card[data-id="' + id + '"]');
+  var body = el ? el.querySelector('.memo-card-body') : null;
+  if (body) {
+    if (willCollapse) {
+      var h = body.scrollHeight;
+      body.style.maxHeight = h + 'px';
+      void body.offsetHeight; /* 強制觸發一次 reflow，讓上面這行設定的高度先生效，動畫才有正確起點 */
+      requestAnimationFrame(function(){
+        if (el) el.classList.add('collapsed');
+        body.style.maxHeight = '0px';
+      });
     } else {
-      doc.insertBefore(heading, refChild);
+      if (el) el.classList.remove('collapsed');
+      var target = body.scrollHeight;
+      body.style.maxHeight = target + 'px';
+      var onEnd = function(e){
+        if (e.target !== body || e.propertyName !== 'max-height') return;
+        body.style.maxHeight = 'none'; /* 展開完成後恢復不限高，避免之後在這張卡加圖片被裁掉 */
+        body.removeEventListener('transitionend', onEnd);
+      };
+      body.addEventListener('transitionend', onEnd);
     }
+  } else if (el) {
+    el.classList.toggle('collapsed', willCollapse);
   }
-  memoSelectHeadingText(heading.querySelector('.memo-heading-text'));
-  heading.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.collapsed = willCollapse;
+  memoScheduleSave();
 }
-function memoSetImgBtnBusy(busy, text){
-  var label = document.getElementById('memo-insert-img-label');
-  var labelText = document.getElementById('memo-insert-img-label-text');
-  if (label) label.classList.toggle('busy', busy);
-  if (labelText) labelText.textContent = text || (busy ? '處理中…' : '📷 插入圖片');
+function memoCardTitleInput(id, value){
+  var card = memoFindCard(id);
+  if (!card) return;
+  card.title = value;
+  memoScheduleSave();
 }
-function memoInsertImagesAtCursor(input){
+function memoCardDeleteCard(id){
+  mapShowNoteConfirm('確定要刪除這張卡片嗎？刪除後無法復原。', function(ok){
+    if (!ok) return;
+    memoCards = memoCards.filter(function(c){ return c.id !== id; });
+    memoCardsRender();
+    memoCommitEdits();
+  });
+}
+function memoCardDeleteImage(id, idx){
+  var card = memoFindCard(id);
+  if (!card) return;
+  card.images.splice(idx, 1);
+  memoCardsRender();
+  memoCommitEdits();
+}
+function memoCardShowLightbox(id, idx){
+  var card = memoFindCard(id);
+  if (!card || !card.images.length) return;
+  mapShowLightboxImg(card.images[idx], card.images, idx);
+}
+function memoSetCardImgBtnBusy(id, busy, text){
+  var btn = document.querySelector('.memo-card-add-img-btn[data-id="' + id + '"]');
+  if (!btn) return;
+  btn.classList.toggle('busy', busy);
+  var span = btn.querySelector('span');
+  if (span) span.textContent = text || (busy ? '處理中…' : '📷 新增');
+}
+function memoCardInsertImages(id, input){
   var files = Array.prototype.slice.call(input.files || []);
   if (!files.length) return;
-  var doc = memoDocEl();
-  doc.focus();
-  memoSetImgBtnBusy(true, files.length > 1 ? '處理中… (0/' + files.length + ')' : '處理中…');
+  var card = memoFindCard(id);
+  if (!card) { input.value = ''; return; }
+  memoSetCardImgBtnBusy(id, true, files.length > 1 ? '處理中… (0/' + files.length + ')' : '處理中…');
   var doneCount = 0;
-  var sel = window.getSelection();
-  var range;
-  if (memoSavedRange && doc.contains(memoSavedRange.startContainer)) {
-    range = memoSavedRange.cloneRange();
-  } else {
-    range = document.createRange();
-    range.selectNodeContents(doc);
-    range.collapse(false);
-  }
-  sel.removeAllRanges();
-  sel.addRange(range);
   function insertOne(i){
     if (i >= files.length) {
-      memoTrackSelection();
-      memoDirty = true;
-      memoSetImgBtnBusy(true, '儲存中…');
+      memoSetCardImgBtnBusy(id, true, '儲存中…');
       memoCommitEdits().then(function(ok){
-        memoSetImgBtnBusy(false);
+        memoCardsRender();
         if (ok) memoShowToast('✅ 已儲存' + (files.length > 1 ? files.length + ' 張照片' : ''));
-        /* 存檔失敗時 memoSaveRemote 內部已經跳過失敗原因的提示，這裡不用重複顯示 */
+        /* 存檔失敗時 memoSaveRemote 內部已經跳出失敗原因的提示，這裡不用重複顯示 */
       });
       return;
     }
     memoCompressImage(files[i], function(dataUrl){
       doneCount++;
-      if (files.length > 1) memoSetImgBtnBusy(true, '處理中… (' + doneCount + '/' + files.length + ')');
-      if (!dataUrl) { insertOne(i + 1); return; }
-      var img = document.createElement('img');
-      img.className = 'memo-inline-img';
-      img.src = dataUrl;
-      var wrap = document.createElement('span');
-      wrap.className = 'memo-inline-img-wrap';
-      wrap.setAttribute('contenteditable', 'false');
-      wrap.appendChild(img);
-      var delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'memo-inline-img-del';
-      delBtn.setAttribute('contenteditable', 'false');
-      delBtn.textContent = '✕';
-      wrap.appendChild(delBtn);
-      var curSel = window.getSelection();
-      var r = (curSel && curSel.rangeCount) ? curSel.getRangeAt(0) : range;
-      if (!r.collapsed) r.collapse(false); /* 只移動游標，絕對不要吃掉選取範圍內的既有內容（例如舊圖片） */
-      r.insertNode(wrap);
-      /* 圖片後面補一個零寬字元，讓游標有個「看得到、點得到」的文字落點可以停在圖片右側，
-         不然緊鄰的圖片會讓瀏覽器很難把游標準確定位在圖片後面 */
-      var spacer = document.createTextNode('​');
-      wrap.parentNode.insertBefore(spacer, wrap.nextSibling);
-      var after = document.createRange();
-      after.setStart(spacer, 1);
-      after.collapse(true);
-      curSel.removeAllRanges();
-      curSel.addRange(after);
-      memoSavedRange = after.cloneRange();
+      if (files.length > 1) memoSetCardImgBtnBusy(id, true, '處理中… (' + doneCount + '/' + files.length + ')');
+      if (dataUrl) card.images.push(dataUrl);
       insertOne(i + 1);
     });
   }
   insertOne(0);
   input.value = '';
 }
-function memoSanitizeHtml(html){
-  var tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  var ALLOWED = { DIV: 1, BR: 1, P: 1, SPAN: 1, B: 1, I: 1, U: 1, IMG: 1, STRONG: 1, EM: 1 };
-  (function clean(node){
-    Array.prototype.slice.call(node.childNodes).forEach(function(child){
-      if (child.nodeType === 1) {
-        if (!ALLOWED[child.tagName]) {
-          while (child.firstChild) node.insertBefore(child.firstChild, child);
-          node.removeChild(child);
-          return;
-        }
-        Array.prototype.slice.call(child.attributes).forEach(function(attr){
-          var name = attr.name.toLowerCase();
-          var keep = (name === 'class') || (child.tagName === 'IMG' && name === 'src');
-          if (!keep) child.removeAttribute(attr.name);
-        });
-        clean(child);
-      } else if (child.nodeType === 8) {
-        node.removeChild(child);
-      }
+function memoCardsRender(){
+  var wrap = document.getElementById('memo-card-list');
+  if (!wrap) return;
+  var toolbar = document.getElementById('memo-toolbar');
+  var toggleBtn = document.getElementById('memo-edit-toggle-btn');
+  if (toggleBtn) {
+    toggleBtn.textContent = memoEditMode ? '✓ 完成' : '✏️ 編輯';
+    toggleBtn.classList.toggle('active', memoEditMode);
+  }
+  if (toolbar) toolbar.style.display = memoEditMode ? '' : 'none';
+  if (!memoCards.length) {
+    wrap.innerHTML = '<div class="memo-empty-hint">' + (memoEditMode ? '還沒有卡片，點下方「➕ 新增卡片」開始' : '還沒有內容，點右上角「✏️ 編輯」新增') + '</div>';
+    return;
+  }
+  var html = '';
+  memoCards.forEach(function(card){
+    var collapsedClass = card.collapsed ? ' collapsed' : '';
+    var editingClass = memoEditMode ? ' editing' : '';
+    html += '<div class="memo-card' + collapsedClass + editingClass + '" data-id="' + card.id + '">';
+    html += '<div class="memo-card-header"' + (memoEditMode ? '' : ' onclick="memoCardToggleCollapse(\'' + card.id + '\')"') + '>';
+    html += '<button type="button" class="memo-card-toggle" onclick="event.stopPropagation();memoCardToggleCollapse(\'' + card.id + '\')">▸</button>';
+    if (memoEditMode) {
+      html += '<input type="text" class="memo-card-title-input" data-id="' + card.id + '" placeholder="輸入標題…" oninput="memoCardTitleInput(\'' + card.id + '\', this.value)">';
+      html += '<button type="button" class="memo-card-delete-btn" onclick="memoCardDeleteCard(\'' + card.id + '\')">🗑</button>';
+    } else {
+      html += '<div class="memo-card-title-text">' + sbEsc(card.title) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="memo-card-body"><div class="memo-card-images">';
+    card.images.forEach(function(src, idx){
+      html += '<span class="memo-card-img-wrap">';
+      html += '<img class="memo-card-img" src="' + src + '" onclick="memoCardShowLightbox(\'' + card.id + '\',' + idx + ')">';
+      if (memoEditMode) html += '<button type="button" class="memo-card-img-del" onclick="memoCardDeleteImage(\'' + card.id + '\',' + idx + ')">✕</button>';
+      html += '</span>';
     });
-  })(tmp);
-  return tmp.innerHTML;
-}
-function memoCommitEdits(){
-  memoDirty = false;
-  var doc = memoDocEl();
-  if (!doc) return Promise.resolve(false);
-  var clone = doc.cloneNode(true);
-  memoStripEditorChrome(clone);
-  var body = memoSanitizeHtml(clone.innerHTML);
-  memoDoc = { body: body, updatedAt: Date.now() };
-  return memoSaveRemote();
+    if (memoEditMode) {
+      html += '<label class="memo-card-add-img-btn" data-id="' + card.id + '">'
+        + '<span>📷 新增</span>'
+        + '<input type="file" accept="image/*" multiple style="display:none;" onchange="memoCardInsertImages(\'' + card.id + '\', this)">'
+        + '</label>';
+    }
+    html += '</div></div></div>';
+  });
+  wrap.innerHTML = html;
+  /* 標題用 JS 直接設定 .value，不要塞進 HTML 屬性字串裡，避免標題裡有雙引號時把 HTML 弄壞 */
+  if (memoEditMode) {
+    memoCards.forEach(function(card){
+      var inp = wrap.querySelector('.memo-card-title-input[data-id="' + card.id + '"]');
+      if (inp) inp.value = card.title;
+    });
+  }
 }
 memoLoadLocal();
 memoMaybeRecompressAndSave();
