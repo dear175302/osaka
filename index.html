@@ -4104,8 +4104,62 @@ var mapNotesDbRef = null;
 var mapNotesSuppressEcho = false;
 var mapNoteCurrentKey = null;
 var mapNoteCurrentIndex = null;
+/* 跟備忘錄一樣，改成把照片存成真正的 Blob 進 IndexedDB，不再轉 base64 塞進 localStorage
+   （地圖筆記跟備忘錄共用同一個瀏覽器 localStorage 總額度，兩邊都換掉才能真正解決容量問題）。
+   回傳 Promise<boolean>，但目前呼叫端維持跟以前一樣「不特別檢查結果」的 fire-and-forget 用法。 */
 function mapNotesSaveLocalBackup(){
-  try { localStorage.setItem('mapnotes_osaka2026', JSON.stringify(mapNotes)); } catch(e){}
+  var blobNotes = {};
+  Object.keys(mapNotes).forEach(function(key){
+    blobNotes[key] = (mapNotes[key] || []).map(function(note){
+      return {
+        text: note.text || '',
+        images: (note.images || []).map(function(src){
+          if (typeof src === 'string' && src.indexOf('data:') === 0) {
+            var blob = memoDataUrlToBlob(src);
+            if (blob) return blob;
+          }
+          return src;
+        })
+      };
+    });
+  });
+  return memoOpenIdb().then(function(db){
+    return new Promise(function(resolve){
+      var tx;
+      try {
+        tx = db.transaction(MAPNOTES_IDB_STORE, 'readwrite');
+      } catch (e) { resolve(false); return; }
+      tx.objectStore(MAPNOTES_IDB_STORE).put(blobNotes, 'mapNotes');
+      tx.oncomplete = function(){ resolve(true); };
+      tx.onerror = function(){ resolve(false); };
+      tx.onabort = function(){ resolve(false); };
+    });
+  }).catch(function(err){
+    console.error('Map notes IndexedDB save failed', err);
+    return false;
+  });
+}
+/* 把從 IndexedDB 讀回來的「照片是 Blob」版本轉回畫面用的 base64 版本 */
+function mapNotesBlobDataToNotes(blobData){
+  var tasks = [];
+  var out = blobData || {};
+  Object.keys(out).forEach(function(key){
+    (out[key] || []).forEach(function(note){
+      (note.images || []).forEach(function(img, idx){
+        if (img && typeof Blob !== 'undefined' && img instanceof Blob) {
+          tasks.push(memoBlobToDataUrl(img).then(function(dataUrl){ note.images[idx] = dataUrl; }).catch(function(){ note.images[idx] = null; }));
+        }
+      });
+    });
+  });
+  return Promise.all(tasks).then(function(){
+    Object.keys(out).forEach(function(key){
+      (out[key] || []).forEach(function(note){
+        note.images = (note.images || []).filter(function(v){ return v; }); /* 濾掉極少數轉換失敗的項目 */
+      });
+    });
+    return mapNotesNormalize(out);
+  });
 }
 function mapNotesNormalize(data){
   var out = {};
@@ -4126,11 +4180,43 @@ function mapNotesNormalize(data){
   });
   return out;
 }
+/* 讀取本機資料，回傳 Promise（IndexedDB 是非同步 API）。同一個 Promise 會被記住並重複回傳，
+   避免重複開資料庫／重複搬家。 */
+var mapNotesLoadedPromise = null;
 function mapNotesLoadLocal(){
-  try {
-    var raw = localStorage.getItem('mapnotes_osaka2026');
-    if (raw) mapNotes = mapNotesNormalize(JSON.parse(raw));
-  } catch(e){}
+  if (mapNotesLoadedPromise) return mapNotesLoadedPromise;
+  mapNotesLoadedPromise = memoOpenIdb().then(function(db){
+    return new Promise(function(resolve){
+      var req;
+      try {
+        req = db.transaction(MAPNOTES_IDB_STORE, 'readonly').objectStore(MAPNOTES_IDB_STORE).get('mapNotes');
+      } catch (e) { resolve(null); return; }
+      req.onsuccess = function(){ resolve(req.result || null); };
+      req.onerror = function(){ resolve(null); };
+    });
+  }).catch(function(){ return null; }).then(function(blobData){
+    return blobData ? mapNotesBlobDataToNotes(blobData) : null;
+  }).then(function(notesFromIdb){
+    if (notesFromIdb && Object.keys(notesFromIdb).length) {
+      mapNotes = notesFromIdb;
+      return;
+    }
+    /* IndexedDB 是空的：把上一版存在 localStorage 的舊資料搬過來，搬完就刪掉，
+       不然會一直佔用本來就很小的 localStorage 額度。 */
+    var legacy = null;
+    try {
+      var raw = localStorage.getItem('mapnotes_osaka2026');
+      if (raw) legacy = mapNotesNormalize(JSON.parse(raw));
+    } catch(e){}
+    if (legacy && Object.keys(legacy).length) {
+      mapNotes = legacy;
+      try { localStorage.removeItem('mapnotes_osaka2026'); } catch(e){}
+      return mapNotesSaveLocalBackup().then(function(){});
+    }
+  }).catch(function(err){
+    console.error('Map notes local load failed', err);
+  });
+  return mapNotesLoadedPromise;
 }
 /* 跟備忘錄同樣的道理：地圖筆記的照片以前也是沒壓縮直接存，這些舊資料會跟備忘錄
    共用同一個瀏覽器的 localStorage 總容量，就算現在改的是備忘錄，也可能因為地圖筆記
@@ -4373,7 +4459,12 @@ function mapOpenNotesListPopup(key, forceEditable){
   if (addBtn) addBtn.style.display = mapNotesPopupEditable ? '' : 'none';
   document.getElementById('map-note-backdrop').style.display = 'block';
   document.getElementById('map-notes-list-popup').style.display = 'block';
-  mapNotesMaybeRecompressAndSave();
+  /* 保險：萬一使用者開頁面之後幾乎馬上就點開筆記，IndexedDB 的非同步讀取可能還沒跑完，
+     這裡等它跑完後再刷新一次畫面，避免明明有筆記卻暫時顯示成空的。 */
+  mapNotesLoadLocal().then(function(){
+    if (mapNotesListCurrentKey === key) mapRenderNotesListPopupContent();
+    mapNotesMaybeRecompressAndSave();
+  });
 }
 function mapRenderNotesListPopupContent(){
   var key = mapNotesListCurrentKey;
@@ -4445,7 +4536,7 @@ function mapDeleteNote(key, index){
     if (mapNotesListCurrentKey === key) mapRenderNotesListPopupContent();
   });
 }
-mapNotesLoadLocal();
+mapNotesLoadLocal().then(function(){ mapNotesRefreshView(); mapNotesMaybeRecompressAndSave(); });
 
 /* ---- 備忘錄（一張一張卡片：標題＋圖片，可收合展開，改用一般表單元素而非 contenteditable，
    避免舊版單一文件模型把「一段內容」拆成好幾個平行 DOM 節點所衍生的各種收合／點擊錯位問題） ---- */
@@ -4455,8 +4546,100 @@ var memoCardsSuppressEcho = false;
 var memoEditMode = false;
 var memoDirty = false;
 var memoAutoSaveTimer = null;
+/* ---- 本機備份改用 IndexedDB，不再把照片存成 base64 塞進 localStorage ----
+   localStorage 每個網站通常只有 5~10MB 額度，而且規範只能存文字，我們原本把照片轉成
+   base64 文字再存，會比真正的二進位檔案還大上三成左右，額度用得特別快。
+   IndexedDB 可以直接存真正的二進位 Blob（不用先轉成 base64 文字），
+   而且容量上限通常是幾十到幾百 MB 起跳（依瀏覽器和裝置剩餘空間而定），比 localStorage 大非常多。
+   雲端（Firebase Realtime Database）目前還是走 base64 JSON，這裡先只換本機這一層，
+   記憶體裡的 memoCards 仍然用 base64 字串（畫面顯示、雲端同步都還是靠這個），
+   只有「存到本機」跟「從本機讀回來」這兩個動作，會在邊界上跟 Blob 互轉。 */
+var MEMO_IDB_NAME = 'osaka2026_memo_idb';
+var MEMO_IDB_STORE = 'cards';
+var MAPNOTES_IDB_STORE = 'mapNotes'; /* 跟備忘錄共用同一個 IndexedDB 資料庫，只是分開的資料表，
+   這樣地圖筆記的照片也能享有一樣的「存真正的 Blob、額度大很多」的好處，不用另外開一個資料庫 */
+var memoIdbPromise = null;
+function memoOpenIdb(){
+  if (memoIdbPromise) return memoIdbPromise;
+  memoIdbPromise = new Promise(function(resolve, reject){
+    if (!window.indexedDB) { reject(new Error('IndexedDB not supported')); return; }
+    var req = indexedDB.open(MEMO_IDB_NAME, 2);
+    req.onupgradeneeded = function(){
+      var db = req.result;
+      if (!db.objectStoreNames.contains(MEMO_IDB_STORE)) db.createObjectStore(MEMO_IDB_STORE);
+      if (!db.objectStoreNames.contains(MAPNOTES_IDB_STORE)) db.createObjectStore(MAPNOTES_IDB_STORE);
+    };
+    req.onsuccess = function(){ resolve(req.result); };
+    req.onerror = function(){ reject(req.error); };
+  });
+  return memoIdbPromise;
+}
+function memoDataUrlToBlob(dataUrl){
+  var m = /^data:([^;]+);base64,(.*)$/.exec(dataUrl || '');
+  if (!m) return null;
+  try {
+    var mime = m[1], bin = atob(m[2]);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  } catch (e) { return null; }
+}
+function memoBlobToDataUrl(blob){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(){ resolve(reader.result); };
+    reader.onerror = function(){ reject(reader.error); };
+    reader.readAsDataURL(blob);
+  });
+}
+/* 回傳 Promise<boolean>：把目前的 memoCards 轉成「照片是真正 Blob」的版本存進 IndexedDB。
+   IndexedDB 的交易是非同步的，額度爆掉時走 onerror／onabort，不是丟例外，所以用 Promise 包起來，
+   讓呼叫端可以跟原本一樣用同一套「存不到就跳提示」的邏輯。 */
 function memoSaveLocalBackup(){
-  try { localStorage.setItem('memocards_osaka2026', JSON.stringify(memoCards)); return true; } catch(e){ return false; }
+  var blobCards = memoCards.map(function(c){
+    return {
+      id: c.id,
+      title: c.title,
+      collapsed: !!c.collapsed,
+      images: (c.images || []).map(function(src){
+        if (typeof src === 'string' && src.indexOf('data:') === 0) {
+          var blob = memoDataUrlToBlob(src);
+          if (blob) return blob;
+        }
+        return src; /* 轉換失敗（例如格式不是預期的 data URL）就保留原字串，不要整個存檔失敗 */
+      })
+    };
+  });
+  return memoOpenIdb().then(function(db){
+    return new Promise(function(resolve){
+      var tx;
+      try {
+        tx = db.transaction(MEMO_IDB_STORE, 'readwrite');
+      } catch (e) { resolve(false); return; }
+      tx.objectStore(MEMO_IDB_STORE).put(blobCards, 'memoCards');
+      tx.oncomplete = function(){ resolve(true); };
+      tx.onerror = function(){ resolve(false); };
+      tx.onabort = function(){ resolve(false); };
+    });
+  }).catch(function(err){
+    console.error('Memo IndexedDB save failed', err);
+    return false;
+  });
+}
+/* 把從 IndexedDB 讀回來的「照片是 Blob」版本轉回記憶體用的 base64 版本 */
+function memoBlobCardsToCards(blobCards){
+  var tasks = [];
+  (blobCards || []).forEach(function(c){
+    if (!c || typeof c !== 'object') return;
+    (c.images || []).forEach(function(img, idx){
+      if (img && typeof Blob !== 'undefined' && img instanceof Blob) {
+        tasks.push(memoBlobToDataUrl(img).then(function(dataUrl){ c.images[idx] = dataUrl; }).catch(function(){ c.images[idx] = null; }));
+      }
+    });
+  });
+  return Promise.all(tasks).then(function(){
+    return memoNormalizeCards(blobCards);
+  });
 }
 var memoToastTimer = null;
 function memoShowToast(msg){
@@ -4569,13 +4752,18 @@ function memoNormalizeCards(data){
     };
   });
 }
-/* 從舊版本（單一文件 contenteditable／更早的一份一份備忘錄）搬移資料，只做這一次，
-   而且完全不刪除舊的 localStorage 資料，當作安全備份。 */
+/* 從舊版本（單一文件 contenteditable／更早的一份一份備忘錄）搬移資料，只做這一次。
+   注意：舊資料裡的照片會整批複製一份到新格式，如果搬完之後還留著舊的 localStorage
+   資料，等於同一批照片在額度裡佔了兩份空間——舊資料本來就可能已經逼近容量上限，
+   這樣搬完家反而更容易「儲存空間不足」（實測：光是搬移就會讓新格式直接存檔失敗）。
+   所以資料一讀進記憶體、確定搬移內容完整後，就把舊的大體積資料清掉，把額度還給新格式。 */
 function memoMigrateFromLegacy(){
   var migrated = [];
+  var hadLegacyDoc = false;
   try {
     var docRaw = localStorage.getItem('memodoc_osaka2026');
     if (docRaw) {
+      hadLegacyDoc = true;
       var docData = JSON.parse(docRaw);
       var html = (docData && typeof docData.body === 'string') ? docData.body : '';
       if (html) {
@@ -4600,10 +4788,15 @@ function memoMigrateFromLegacy(){
     }
   } catch(e){}
   migrated = migrated.filter(function(c){ return c.title || c.images.length; });
+  if (migrated.length && hadLegacyDoc) {
+    try { localStorage.removeItem('memodoc_osaka2026'); } catch(e){}
+  }
   if (!migrated.length) {
+    var hadLegacyList = false;
     try {
       var legacyRaw = localStorage.getItem('memos_osaka2026');
       if (legacyRaw) {
+        hadLegacyList = true;
         var legacy = JSON.parse(legacyRaw);
         Object.keys(legacy || {}).sort(function(a, b){
           return (legacy[a].updatedAt || 0) - (legacy[b].updatedAt || 0);
@@ -4617,22 +4810,55 @@ function memoMigrateFromLegacy(){
         });
       }
     } catch(e){}
+    if (migrated.length && hadLegacyList) {
+      try { localStorage.removeItem('memos_osaka2026'); } catch(e){}
+    }
   }
   return migrated;
 }
+/* 讀取本機資料，回傳 Promise（IndexedDB 是非同步 API，讀取沒辦法像 localStorage 一樣同步拿到結果）。
+   同一個 Promise 會被記住並重複回傳，避免重複開資料庫／重複搬家。 */
+var memoLoadedPromise = null;
 function memoLoadLocal(){
-  try {
-    var raw = localStorage.getItem('memocards_osaka2026');
-    if (raw) {
-      memoCards = memoNormalizeCards(JSON.parse(raw));
+  if (memoLoadedPromise) return memoLoadedPromise;
+  memoLoadedPromise = memoOpenIdb().then(function(db){
+    return new Promise(function(resolve){
+      var req;
+      try {
+        req = db.transaction(MEMO_IDB_STORE, 'readonly').objectStore(MEMO_IDB_STORE).get('memoCards');
+      } catch (e) { resolve(null); return; }
+      req.onsuccess = function(){ resolve(req.result || null); };
+      req.onerror = function(){ resolve(null); };
+    });
+  }).catch(function(){ return null; }).then(function(blobCards){
+    return blobCards ? memoBlobCardsToCards(blobCards) : null;
+  }).then(function(cardsFromIdb){
+    if (cardsFromIdb && cardsFromIdb.length) {
+      memoCards = cardsFromIdb;
       return;
     }
-  } catch(e){}
-  var migrated = memoMigrateFromLegacy();
-  if (migrated.length) {
-    memoCards = migrated;
-    memoSaveLocalBackup();
-  }
+    /* IndexedDB 是空的：先看看上一版用 localStorage 存的新格式資料還在不在，把它搬進 IndexedDB，
+       搬完就把這份刪掉，不然它會一直占用本來就很小的 localStorage 額度。 */
+    var legacyNewFormat = null;
+    try {
+      var raw = localStorage.getItem('memocards_osaka2026');
+      if (raw) legacyNewFormat = memoNormalizeCards(JSON.parse(raw));
+    } catch(e){}
+    if (legacyNewFormat && legacyNewFormat.length) {
+      memoCards = legacyNewFormat;
+      try { localStorage.removeItem('memocards_osaka2026'); } catch(e){}
+      return memoSaveLocalBackup().then(function(){});
+    }
+    /* 再更早：從 contenteditable 單一文件格式／更早的一份一份備忘錄搬家 */
+    var migrated = memoMigrateFromLegacy();
+    if (migrated.length) {
+      memoCards = migrated;
+      return memoSaveLocalBackup().then(function(){});
+    }
+  }).catch(function(err){
+    console.error('Memo local load failed', err);
+  });
+  return memoLoadedPromise;
 }
 function memoInitFirebase(){
   if (!sbUseFirebase) return;
@@ -4662,28 +4888,29 @@ function memoInitFirebase(){
    使用者會一直看著「處理中…」動彈不得，誤以為根本沒有存到。
    所以雲端同步改成背景執行：本機一存好就馬上回報完成，雲端寫入失敗時再另外跳一次提示。 */
 function memoSaveRemote(){
-  var localOk = memoSaveLocalBackup();
-  if (!localOk) {
-    memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
-  }
-  if (memoCardsDbRef) {
-    memoCardsSuppressEcho = true;
-    try {
-      var writeResult = memoCardsDbRef.set(memoCards);
-      if (writeResult && typeof writeResult.then === 'function') {
-        writeResult.catch(function(err){
-          memoCardsSuppressEcho = false;
-          console.error('Memo remote save failed', err);
-          memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機，請檢查網路或減少圖片數量');
-        });
-      }
-    } catch(e) {
-      memoCardsSuppressEcho = false;
-      console.error('Memo remote save failed', e);
-      memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機');
+  return memoSaveLocalBackup().then(function(localOk){
+    if (!localOk) {
+      memoShowToast('⚠️ 裝置儲存空間不足，部分內容可能無法保存，建議刪除幾張圖片後再試');
     }
-  }
-  return Promise.resolve(localOk);
+    if (memoCardsDbRef) {
+      memoCardsSuppressEcho = true;
+      try {
+        var writeResult = memoCardsDbRef.set(memoCards);
+        if (writeResult && typeof writeResult.then === 'function') {
+          writeResult.catch(function(err){
+            memoCardsSuppressEcho = false;
+            console.error('Memo remote save failed', err);
+            memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機，請檢查網路或減少圖片數量');
+          });
+        }
+      } catch(e) {
+        memoCardsSuppressEcho = false;
+        console.error('Memo remote save failed', e);
+        memoShowToast('⚠️ 雲端同步失敗，內容僅暫存本機');
+      }
+    }
+    return localOk;
+  });
 }
 function memoCommitEdits(){
   memoDirty = false;
@@ -4709,8 +4936,11 @@ function memoOpen(){
   document.getElementById('memo-overlay').classList.add('open');
   lockBodyScroll();
   memoEditMode = false;
-  memoCardsRender();
-  memoMaybeRecompressAndSave();
+  memoCardsRender(); /* 先用目前記憶體裡有的資料畫一次，避免開啟當下畫面空白閃一下 */
+  memoLoadLocal().then(function(){
+    if (!memoEditMode) memoCardsRender(); /* 本機（IndexedDB）讀取完成後，用最新資料再畫一次 */
+    memoMaybeRecompressAndSave();
+  });
 }
 function memoClose(){
   memoFlushPendingSave();
@@ -4888,8 +5118,7 @@ function memoCardsRender(){
     });
   }
 }
-memoLoadLocal();
-memoMaybeRecompressAndSave();
+memoLoadLocal().then(function(){ memoMaybeRecompressAndSave(); });
 
 
 /* ---- 景點卡片對照筆記 key（供快速選單使用） ---- */
