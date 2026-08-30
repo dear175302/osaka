@@ -661,7 +661,7 @@ strong{font-weight:700;}
 .bg-cat-select{flex:0 0 auto;max-width:82px;font-size:11px;font-weight:600;border:1.2px solid var(--line);border-radius:16px;padding:5px 7px;}
 .bg-cur-input{flex:1 1 0;min-width:0;display:flex;align-items:center;background:var(--surface);border:0.5px solid var(--line);border-radius:7px;overflow:hidden;}
 .bg-cur-label{font-size:9px;color:var(--muted);padding-left:6px;flex-shrink:0;}
-.bg-cur-input input{width:100%;min-width:0;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--ink);text-align:right;padding:6px 6px 6px 2px;}
+.bg-cur-input input{width:100%;min-width:0;border:none;background:transparent;font-size:16px;font-weight:600;color:var(--ink);text-align:right;padding:6px 6px 6px 2px;}
 .bg-cur-input input:focus{outline:none;}
 .bg-split-btn{flex:0 0 auto;font-size:10px;font-weight:700;color:var(--muted);background:var(--surface);border:0.5px solid var(--line);border-radius:7px;padding:6px 7px;cursor:pointer;}
 .bg-split-btn.active{color:#fff;background:var(--accent);border-color:var(--accent);}
@@ -692,7 +692,8 @@ strong{font-weight:700;}
 .usj-chip-popup-note-btn{width:100%;font-size:12.5px;font-weight:600;padding:8px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface-2);color:var(--ink);cursor:pointer;margin-bottom:8px;}
 .usj-chip-popup-notes{margin-bottom:8px;max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
 .usj-popup-note-entry{padding:8px;background:var(--surface-2);border-radius:8px;margin-bottom:6px;text-align:left;}
-.usj-popup-note-text{font-size:12px;color:var(--ink-2);line-height:1.5;white-space:pre-line;}
+.usj-popup-note-text{font-size:12px;color:var(--ink-2);line-height:1.5;white-space:pre-line;word-break:break-all;}
+.sb-auto-link{color:var(--accent);text-decoration:underline;word-break:break-all;}
 .usj-chip-popup-close{width:100%;font-size:12.5px;font-weight:600;padding:8px;border-radius:8px;border:0.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;}
 .usj-time-marker{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:20;pointer-events:none;}
 .usj-time-marker::before{content:attr(data-label);position:absolute;right:6px;top:-9px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:1.5px 7px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
@@ -719,7 +720,7 @@ strong{font-weight:700;}
 .usj-plan-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .usj-plan-tab.usj-plan-add{border-style:dashed;color:var(--accent);border-color:rgba(196,98,45,0.4);background:rgba(196,98,45,0.06);}
 .usj-plan-tab-del{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.3);font-size:8px;line-height:1;}
-.usj-prompt-input{width:100%;box-sizing:border-box;font-size:14px;padding:10px 12px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface-2);color:var(--ink);}
+.usj-prompt-input{width:100%;box-sizing:border-box;font-size:16px;padding:10px 12px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface-2);color:var(--ink);}
 .bg-chart-wrap{background:var(--surface);border-radius:12px;padding:16px;border:0.5px solid var(--line);margin-bottom:16px;}
 .bg-chart-canvas-wrap{position:relative;max-width:170px;margin:0 auto 12px;}
 .bg-chart-total{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:2px 0 14px;padding-bottom:12px;border-bottom:0.5px solid var(--line);}
@@ -796,10 +797,12 @@ strong{font-weight:700;}
 .memo-card:not(.collapsed) .memo-card-toggle{transform:rotate(90deg);}
 .memo-card-title-text{flex:1;font-family:var(--font-serif);font-size:15.5px;font-weight:700;color:var(--ink);word-break:break-word;}
 .memo-card-title-text:empty:before{content:'(未命名)';color:var(--muted);font-weight:400;}
-.memo-card-title-input{flex:1;font-family:var(--font-serif);font-size:15.5px;font-weight:700;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;outline:none;padding:4px 0;min-width:0;}
+.memo-card-title-input{flex:1;font-family:var(--font-serif);font-size:16px;font-weight:700;color:var(--ink);border:none;border-bottom:1px solid var(--line);background:transparent;outline:none;padding:4px 0;min-width:0;}
 .memo-card-delete-btn{flex-shrink:0;width:26px;height:26px;border:none;background:transparent;color:#d64545;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
 .memo-card-body{overflow:hidden;max-height:2000px;opacity:1;transition:max-height 0.3s ease, opacity 0.25s ease, padding 0.3s ease;padding:0 14px 14px;}
 .memo-card.collapsed .memo-card-body{max-height:0;opacity:0;padding-top:0;padding-bottom:0;}
+.memo-card-text-view{font-size:14px;line-height:1.6;color:var(--ink-2);white-space:pre-wrap;word-break:break-word;margin-bottom:10px;}
+.memo-card-text-input{width:100%;box-sizing:border-box;min-height:64px;font-size:16px;padding:8px 10px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface-2);color:var(--ink);font-family:inherit;resize:vertical;margin-bottom:10px;}
 .memo-card-images{display:flex;flex-wrap:wrap;}
 .memo-card-img-wrap{position:relative;display:inline-block;vertical-align:top;width:22%;margin:0 2.4% 8px 0;}
 .memo-card-img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:10px;display:block;cursor:pointer;}
@@ -965,7 +968,7 @@ strong{font-weight:700;}
 .sb-rate-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(196,98,45,0.06);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--ink-2);margin-bottom:10px;gap:8px;}
 .sb-rate-edit-btn{background:none;border:none;color:var(--accent);font-size:11.5px;text-decoration:underline;cursor:pointer;flex-shrink:0;}
 .sb-rate-editor{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:var(--ink);}
-.sb-rate-editor input{width:70px;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:13px;background:var(--surface);color:var(--ink);}
+.sb-rate-editor input{width:80px;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:16px;background:var(--surface);color:var(--ink);}
 .sb-rate-save-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;}
 .sb-amount-row{display:flex;gap:8px;align-items:stretch;margin-bottom:16px;}
 .sb-currency-toggle{flex-shrink:0;width:52px;height:46px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--accent);font-size:18px;font-weight:700;font-family:var(--font-sans);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;}
@@ -982,7 +985,7 @@ strong{font-weight:700;}
 .sb-filter-wrap .sb-field-label{margin-top:8px;}
 .sb-filter-wrap .sb-field-label:first-child{margin-top:0;}
 .sb-search-wrap{position:relative;margin-bottom:4px;}
-.sb-search-wrap input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:15px;font-family:var(--font-sans);background:var(--bg);color:var(--ink);}
+.sb-search-wrap input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:var(--font-sans);background:var(--bg);color:var(--ink);}
 .sb-search-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 16px rgba(26,20,16,0.12);z-index:10;max-height:220px;overflow-y:auto;}
 .sb-search-suggestion-row{padding:9px 12px;cursor:pointer;border-bottom:0.5px solid var(--line);}
 .sb-search-suggestion-row:last-child{border-bottom:none;}
@@ -1028,7 +1031,7 @@ strong{font-weight:700;}
 .td-item-day-row{display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap;}
 .td-item-day{font-size:11px;color:var(--muted);}
 .td-deadline-row{display:flex;gap:8px;margin-bottom:14px;}
-.td-deadline-input{flex:1;min-width:0;box-sizing:border-box;font-size:13.5px;padding:9px 10px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface);color:var(--ink);}
+.td-deadline-input{flex:1;min-width:0;box-sizing:border-box;font-size:16px;padding:9px 10px;border-radius:8px;border:0.5px solid var(--line);background:var(--surface);color:var(--ink);}
 .td-item-deadline{font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px;flex-shrink:0;}
 .td-item-deadline.upcoming{color:var(--muted);font-weight:400;}
 .td-item-deadline.today{color:#b5762f;}
@@ -3823,7 +3826,7 @@ function usjRenderPopupNotes(itemId){
   var html = '';
   notes.forEach(function(note, ni){
     html += '<div class="usj-popup-note-entry">';
-    if (note.text) html += '<div class="usj-popup-note-text">' + sbEsc(note.text).replace(/\n/g,'<br>') + '</div>';
+    if (note.text) html += '<div class="usj-popup-note-text">' + sbLinkify(sbEsc(note.text)).replace(/\n/g,'<br>') + '</div>';
     if (note.images && note.images.length) {
       html += '<div class="map-note-images">';
       note.images.forEach(function(src){
@@ -4477,7 +4480,7 @@ function mapRenderNotesListPopupContent(){
   var html = '';
   notes.forEach(function(note, ni){
     html += '<div class="usj-popup-note-entry">';
-    if (note.text) html += '<div class="usj-popup-note-text">' + sbEsc(note.text).replace(/\n/g,'<br>') + '</div>';
+    if (note.text) html += '<div class="usj-popup-note-text">' + sbLinkify(sbEsc(note.text)).replace(/\n/g,'<br>') + '</div>';
     if (note.images && note.images.length) {
       html += '<div class="map-note-images">';
       note.images.forEach(function(src){
@@ -4600,6 +4603,7 @@ function memoSaveLocalBackup(){
     return {
       id: c.id,
       title: c.title,
+      text: c.text || '',
       collapsed: !!c.collapsed,
       images: (c.images || []).map(function(src){
         if (typeof src === 'string' && src.indexOf('data:') === 0) {
@@ -4747,6 +4751,7 @@ function memoNormalizeCards(data){
     return {
       id: c.id || memoNewCardId(),
       title: typeof c.title === 'string' ? c.title : '',
+      text: typeof c.text === 'string' ? c.text : '',
       images: Array.isArray(c.images) ? c.images.filter(function(s){ return typeof s === 'string' && s; }) : [],
       collapsed: !!c.collapsed
     };
@@ -4774,10 +4779,10 @@ function memoMigrateFromLegacy(){
           if (node.nodeType === 1 && node.classList && node.classList.contains('memo-heading')) {
             var textEl = node.querySelector('.memo-heading-text');
             var title = ((textEl ? textEl.textContent : node.textContent) || '').trim();
-            current = { id: memoNewCardId(), title: title, images: [], collapsed: false };
+            current = { id: memoNewCardId(), title: title, text: '', images: [], collapsed: false };
             migrated.push(current);
           } else if (node.nodeType === 1) {
-            if (!current) { current = { id: memoNewCardId(), title: '', images: [], collapsed: false }; migrated.push(current); }
+            if (!current) { current = { id: memoNewCardId(), title: '', text: '', images: [], collapsed: false }; migrated.push(current); }
             var imgs = (node.classList && node.classList.contains('memo-inline-img'))
               ? [node]
               : Array.prototype.slice.call(node.querySelectorAll ? node.querySelectorAll('img.memo-inline-img') : []);
@@ -4806,7 +4811,7 @@ function memoMigrateFromLegacy(){
           var title = m.title || (m.text ? String(m.text).split('\n')[0].slice(0, 40) : '');
           var images = Array.isArray(m.images) ? m.images.slice() : [];
           if (!title && !images.length) return;
-          migrated.push({ id: memoNewCardId(), title: title, images: images, collapsed: false });
+          migrated.push({ id: memoNewCardId(), title: title, text: m.text || '', images: images, collapsed: false });
         });
       }
     } catch(e){}
@@ -4815,6 +4820,16 @@ function memoMigrateFromLegacy(){
     }
   }
   return migrated;
+}
+/* 備忘錄卡片預設收合：每次重新載入頁面／打開備忘錄時，第一次把資料放進 memoCards 時全部強制收合，
+   讓列表一開始比較精簡，使用者要看哪張再點開。只在「這次頁面存活期間第一次拿到資料」時套用一次，
+   之後（例如另一台裝置即時同步進來的更新）就不再強制收合，避免使用者正在看某張卡片時被突然收合。 */
+var memoDefaultCollapseApplied = false;
+function memoApplyDefaultCollapse(cards){
+  if (!cards || memoDefaultCollapseApplied) return cards;
+  memoDefaultCollapseApplied = true;
+  cards.forEach(function(c){ c.collapsed = true; });
+  return cards;
 }
 /* 讀取本機資料，回傳 Promise（IndexedDB 是非同步 API，讀取沒辦法像 localStorage 一樣同步拿到結果）。
    同一個 Promise 會被記住並重複回傳，避免重複開資料庫／重複搬家。 */
@@ -4834,7 +4849,7 @@ function memoLoadLocal(){
     return blobCards ? memoBlobCardsToCards(blobCards) : null;
   }).then(function(cardsFromIdb){
     if (cardsFromIdb && cardsFromIdb.length) {
-      memoCards = cardsFromIdb;
+      memoCards = memoApplyDefaultCollapse(cardsFromIdb);
       return;
     }
     /* IndexedDB 是空的：先看看上一版用 localStorage 存的新格式資料還在不在，把它搬進 IndexedDB，
@@ -4845,14 +4860,14 @@ function memoLoadLocal(){
       if (raw) legacyNewFormat = memoNormalizeCards(JSON.parse(raw));
     } catch(e){}
     if (legacyNewFormat && legacyNewFormat.length) {
-      memoCards = legacyNewFormat;
+      memoCards = memoApplyDefaultCollapse(legacyNewFormat);
       try { localStorage.removeItem('memocards_osaka2026'); } catch(e){}
       return memoSaveLocalBackup().then(function(){});
     }
     /* 再更早：從 contenteditable 單一文件格式／更早的一份一份備忘錄搬家 */
     var migrated = memoMigrateFromLegacy();
     if (migrated.length) {
-      memoCards = migrated;
+      memoCards = memoApplyDefaultCollapse(migrated);
       return memoSaveLocalBackup().then(function(){});
     }
   }).catch(function(err){
@@ -4868,7 +4883,7 @@ function memoInitFirebase(){
     memoCardsDbRef.on('value', function(snap){
       var data = snap.val();
       if (data) {
-        memoCards = memoNormalizeCards(data);
+        memoCards = memoApplyDefaultCollapse(memoNormalizeCards(data));
         memoSaveLocalBackup();
         if (memoCardsSuppressEcho) { memoCardsSuppressEcho = false; return; }
         if (!memoEditMode) memoCardsRender();
@@ -4961,7 +4976,7 @@ function memoFindCard(id){
   return null;
 }
 function memoAddCard(){
-  var card = { id: memoNewCardId(), title: '', images: [], collapsed: false };
+  var card = { id: memoNewCardId(), title: '', text: '', images: [], collapsed: false };
   memoCards.push(card);
   memoCardsRender();
   memoScheduleSave();
@@ -5016,6 +5031,12 @@ function memoCardTitleInput(id, value){
   var card = memoFindCard(id);
   if (!card) return;
   card.title = value;
+  memoScheduleSave();
+}
+function memoCardTextInput(id, value){
+  var card = memoFindCard(id);
+  if (!card) return;
+  card.text = value;
   memoScheduleSave();
 }
 function memoCardDeleteCard(id){
@@ -5097,10 +5118,16 @@ function memoCardsRender(){
       html += '<input type="text" class="memo-card-title-input" data-id="' + card.id + '" placeholder="輸入標題…" oninput="memoCardTitleInput(\'' + card.id + '\', this.value)">';
       html += '<button type="button" class="memo-card-delete-btn" onclick="memoCardDeleteCard(\'' + card.id + '\')">🗑</button>';
     } else {
-      html += '<div class="memo-card-title-text">' + sbEsc(card.title) + '</div>';
+      html += '<div class="memo-card-title-text">' + sbLinkify(sbEsc(card.title)) + '</div>';
     }
     html += '</div>';
-    html += '<div class="memo-card-body"><div class="memo-card-images">';
+    html += '<div class="memo-card-body">';
+    if (memoEditMode) {
+      html += '<textarea class="memo-card-text-input" data-id="' + card.id + '" placeholder="輸入內容…（可貼上網址）" oninput="memoCardTextInput(\'' + card.id + '\', this.value)"></textarea>';
+    } else if (card.text) {
+      html += '<div class="memo-card-text-view">' + sbLinkify(sbEsc(card.text)).replace(/\n/g,'<br>') + '</div>';
+    }
+    html += '<div class="memo-card-images">';
     card.images.forEach(function(src, idx){
       html += '<span class="memo-card-img-wrap">';
       html += '<img class="memo-card-img" src="' + src + '" onclick="memoCardShowLightbox(\'' + card.id + '\',' + idx + ')">';
@@ -5116,11 +5143,13 @@ function memoCardsRender(){
     html += '</div></div></div>';
   });
   wrap.innerHTML = html;
-  /* 標題用 JS 直接設定 .value，不要塞進 HTML 屬性字串裡，避免標題裡有雙引號時把 HTML 弄壞 */
+  /* 標題／內文用 JS 直接設定 .value，不要塞進 HTML 屬性字串裡，避免文字裡有雙引號或特殊字元時把 HTML 弄壞 */
   if (memoEditMode) {
     memoCards.forEach(function(card){
       var inp = wrap.querySelector('.memo-card-title-input[data-id="' + card.id + '"]');
       if (inp) inp.value = card.title;
+      var textInp = wrap.querySelector('.memo-card-text-input[data-id="' + card.id + '"]');
+      if (textInp) textInp.value = card.text || '';
     });
   }
 }
@@ -6328,6 +6357,21 @@ function sbEsc(s){
   var d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+/* 把「已經跑過 sbEsc 逃逸」的文字裡看起來像網址的片段轉成可點的超連結。
+   一定要先 sbEsc 再呼叫這個函式，避免使用者輸入的文字裡混進真的 <script> 之類標籤。 */
+function sbLinkify(escapedText){
+  if (!escapedText) return escapedText;
+  return escapedText.replace(/(https?:\/\/[^\s<。，、！？；：」』]+)/g, function(url){
+    var trailMatch = url.match(/[)\]}>.,!?;:]+$/);
+    var trail = '';
+    if (trailMatch) {
+      trail = trailMatch[0];
+      url = url.slice(0, url.length - trail.length);
+    }
+    if (!url) return trail;
+    return '<a class="sb-auto-link" href="' + url + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">' + url + '</a>' + trail;
+  });
 }
 
 function sbCalcBalances(currency){
