@@ -2,9 +2,15 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
+<!-- 每次進頁面都強制重新抓取最新版本，不要用瀏覽器快取住的舊頁面
+     （只影響「這份 HTML／CSS／JS 檔案本身」的快取，不會清掉備忘錄／
+     分帳／待辦等已經存在 IndexedDB、localStorage 或雲端的資料）。 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>大阪旅遊書 2026</title>
 <script>
 /* 全域錯誤攔截：外部資源（地圖／圖表／同步）在網路受限環境下載入失敗時，
@@ -628,7 +634,7 @@ strong{font-weight:700;}
 /* ============================================================
    SPLIT BILL · 分帳
    ============================================================ */
-.tools-fab-wrap{position:fixed;right:16px;bottom:22px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;pointer-events:none;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);}
+.tools-fab-wrap{position:fixed;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;pointer-events:none;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);}
 .tools-fab-wrap.nav-active{opacity:0;transform:translateZ(0) translateY(-78vh) scale(0.4);pointer-events:none;}
 .tools-fab{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,98,45,0.4);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s ease;flex-shrink:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto;}
 .tools-fab.open{transform:rotate(90deg);}
@@ -683,7 +689,7 @@ strong{font-weight:700;}
 .usj-chip.dragging{opacity:0.85;z-index:50;box-shadow:0 4px 10px rgba(0,0,0,0.25);}
 .usj-chip-inline-time{font-size:9px;font-weight:400;opacity:0.85;}
 .usj-chip-includes{font-size:9px;font-weight:400;opacity:0.92;line-height:1.45;margin-top:3px;}
-.usj-chip-popup{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--surface);border:0.5px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:1000;width:min(320px,88vw);}
+.usj-chip-popup{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--surface);border:0.5px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:1000;width:min(320px,88vw);}
 .usj-chip-popup-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px;}
 .usj-chip-popup-time{font-size:12px;color:var(--muted);margin-bottom:10px;white-space:pre-line;line-height:1.5;}
 .usj-chip-popup-row{display:flex;gap:8px;margin-bottom:8px;}
@@ -697,9 +703,9 @@ strong{font-weight:700;}
 .usj-chip-popup-close{width:100%;font-size:12.5px;font-weight:600;padding:8px;border-radius:8px;border:0.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;}
 .usj-time-marker{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:20;pointer-events:none;}
 .usj-time-marker::before{content:attr(data-label);position:absolute;right:6px;top:-9px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:1.5px 7px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
-.usj-insert-btn{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:1001;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:12px 22px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(196,98,45,0.4);cursor:pointer;}
+.usj-insert-btn{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:1001;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:12px 22px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(196,98,45,0.4);cursor:pointer;}
 .usj-sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1002;display:none;}
-.usj-insert-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:1003;background:var(--surface);border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:480px;max-height:70vh;box-shadow:0 -8px 24px rgba(0,0,0,0.2);box-sizing:border-box;display:flex;flex-direction:column;}
+.usj-insert-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:1003;background:var(--surface);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;width:100%;max-width:480px;max-height:70vh;box-shadow:0 -8px 24px rgba(0,0,0,0.2);box-sizing:border-box;display:flex;flex-direction:column;}
 .usj-sheet-list-wrap{max-height:calc(70vh - 140px);overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;will-change:scroll-position;}
 .usj-sheet-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;font-family:var(--font-serif);}
 .usj-sheet-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
@@ -1714,6 +1720,68 @@ svg.leaflet-image-layer.leaflet-interactive path {
 </head>
 <body>
 <section class="cover2" id="cover2">
+<!-- ============================================================
+     TOOLS MENU · 工具選單（分帳／待辦清單）
+     ============================================================ -->
+<div class="tools-fab-wrap" id="tools-fab-wrap">
+  <div class="tools-menu" id="tools-menu">
+    <button class="tools-menu-item" onclick="toolsOpenTool('sb')"><span class="tools-menu-icon sb">💰</span>分帳</button>
+    <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
+    <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
+    <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
+    <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
+  </div>
+  <button class="tools-fab" id="tools-fab" onclick="bgHandleTap()" aria-label="工具選單">⋮</button>
+</div>
+
+<div class="tools-menu-docked" id="tools-menu-docked">
+  <button class="tools-menu-item" onclick="toolsOpenTool('sb')"><span class="tools-menu-icon sb">💰</span>分帳</button>
+  <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
+  <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
+  <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
+  <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   提早定義：分頁切換／工具選單開關的「精簡版」
+   ------------------------------------------------------------------
+   這個檔案把所有景點照片（好幾十張，經過 base64 編碼後是好幾 MB 的文字）
+   都直接寫在同一份 HTML 裡，瀏覽器要先把這些內容整份解析完，才會執行到
+   寫在檔案最後面的完整版 JS（包含分頁切換 cover2SwitchTab、工具選單
+   toolsToggleMenu／bgHandleTap 等）。手機效能較弱、或行程內容加到很多天
+   之後，這段等待可能長達一兩秒甚至更久——使用者一進頁面就點「行程地圖」
+   「景點」或右下角「⋯」，會因為對應的函式還沒定義完成而完全沒反應。
+
+   這裡先提供一份「夠用就好」的精簡版，只做「切換分頁樣式」「開關工具選單」
+   這兩件事，讓使用者一進頁面就能操作；等檔案最下面完整版的同名函式執行後，
+   會直接覆蓋掉這裡的精簡版（JS 允許重複宣告同名 function，後面蓋過前面），
+   之後地圖初始化、分帳/待辦/USJ 等進階功能就會照常運作，不會互相衝突。
+   ------------------------------------------------------------------ */
+function cover2SwitchTab(name){
+  document.querySelectorAll('.cover2-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.tab === name);
+  });
+  document.querySelectorAll('.cover2-panel').forEach(function(p){
+    p.classList.toggle('active', p.dataset.panel === name);
+  });
+  if (name === 'map' && typeof initTripMap === 'function' && typeof tripMapInitDone !== 'undefined' && !tripMapInitDone) {
+    initTripMap();
+    if (typeof mapInitListCollapse === 'function') mapInitListCollapse();
+  }
+}
+function toolsToggleMenu(){
+  var menu = document.getElementById('tools-menu');
+  var fab = document.getElementById('tools-fab');
+  if (!menu || !fab) return;
+  var isOpen = menu.classList.contains('open');
+  menu.classList.toggle('open', !isOpen);
+  fab.classList.toggle('open', !isOpen);
+}
+function bgHandleTap(){ toolsToggleMenu(); }
+</script>
+
+
 <div class="cover2-tabs">
   <button class="cover2-tab active" data-tab="tickets" onclick="cover2SwitchTab('tickets')">路線一覽</button>
   <button class="cover2-tab" data-tab="map" onclick="cover2SwitchTab('map')">行程地圖</button>
@@ -2373,28 +2441,6 @@ window.closeLB = function(pfx) {
 </div>
 </div>
 </section>
-
-<!-- ============================================================
-     TOOLS MENU · 工具選單（分帳／待辦清單）
-     ============================================================ -->
-<div class="tools-fab-wrap" id="tools-fab-wrap">
-  <div class="tools-menu" id="tools-menu">
-    <button class="tools-menu-item" onclick="toolsOpenTool('sb')"><span class="tools-menu-icon sb">💰</span>分帳</button>
-    <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
-    <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
-    <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
-    <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
-  </div>
-  <button class="tools-fab" id="tools-fab" onclick="bgHandleTap()" aria-label="工具選單">⋮</button>
-</div>
-
-<div class="tools-menu-docked" id="tools-menu-docked">
-  <button class="tools-menu-item" onclick="toolsOpenTool('sb')"><span class="tools-menu-icon sb">💰</span>分帳</button>
-  <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
-  <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
-  <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
-  <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
-</div>
 
 <div class="sb-overlay" id="help-overlay">
   <div class="sb-panel">
@@ -4474,7 +4520,9 @@ function mapOpenNotesListPopup(key, forceEditable){
      這裡等它跑完後再刷新一次畫面，避免明明有筆記卻暫時顯示成空的。 */
   mapNotesLoadLocal().then(function(){
     if (mapNotesListCurrentKey === key) mapRenderNotesListPopupContent();
-    mapNotesMaybeRecompressAndSave();
+    /* 同備忘錄的道理：雲端同步開著時，壓縮存檔只信任收到雲端資料之後的那份，
+       避免拿這台裝置的本機舊資料把別的裝置剛新增的筆記蓋掉。 */
+    if (!sbUseFirebase) mapNotesMaybeRecompressAndSave();
   });
 }
 function mapRenderNotesListPopupContent(){
@@ -4547,7 +4595,7 @@ function mapDeleteNote(key, index){
     if (mapNotesListCurrentKey === key) mapRenderNotesListPopupContent();
   });
 }
-mapNotesLoadLocal().then(function(){ mapNotesRefreshView(); mapNotesMaybeRecompressAndSave(); });
+mapNotesLoadLocal().then(function(){ mapNotesRefreshView(); if (!sbUseFirebase) mapNotesMaybeRecompressAndSave(); });
 
 /* ---- 備忘錄（一張一張卡片：標題＋圖片，可收合展開，改用一般表單元素而非 contenteditable，
    避免舊版單一文件模型把「一段內容」拆成好幾個平行 DOM 節點所衍生的各種收合／點擊錯位問題） ---- */
@@ -4888,16 +4936,25 @@ function memoInitFirebase(){
   if (typeof firebase === 'undefined') return;
   try {
     memoCardsDbRef = firebase.database().ref('memoCards/' + sbTripId);
+    var memoSeededKey = 'memoSeededRemote_' + sbTripId;
+    var memoAlreadySeeded = false;
+    try { memoAlreadySeeded = localStorage.getItem(memoSeededKey) === '1'; } catch(e){}
     memoCardsDbRef.on('value', function(snap){
       var data = snap.val();
       if (data) {
         memoCards = memoApplyDefaultCollapse(memoNormalizeCards(data));
         memoSaveLocalBackup();
+        if (!memoAlreadySeeded) { memoAlreadySeeded = true; try { localStorage.setItem(memoSeededKey, '1'); } catch(e){} }
         if (memoCardsSuppressEcho) { memoCardsSuppressEcho = false; return; }
         if (!memoEditMode) memoCardsRender();
         memoMaybeRecompressAndSave();
-      } else if (memoCards.length) {
-        /* 遠端還沒有資料，但本機已經有內容（例如剛從舊格式搬過來）：推上去一次 */
+      } else if (memoCards.length && !memoAlreadySeeded) {
+        /* 遠端還沒有資料，而且這台裝置從沒推送過（不是每次看到空的都推）：
+           很可能是剛從舊格式搬過來，推上去一次。加上「這台裝置是否推送過」的
+           標記，是為了避免兩台裝置「幾乎同時」第一次同步時互搶著把對方剛
+           新增的內容蓋掉。 */
+        memoAlreadySeeded = true;
+        try { localStorage.setItem(memoSeededKey, '1'); } catch(e){}
         memoSaveRemote();
       }
     });
@@ -4962,7 +5019,12 @@ function memoOpen(){
   memoCardsRender(); /* 先用目前記憶體裡有的資料畫一次，避免開啟當下畫面空白閃一下 */
   memoLoadLocal().then(function(){
     if (!memoEditMode) memoCardsRender(); /* 本機（IndexedDB）讀取完成後，用最新資料再畫一次 */
-    memoMaybeRecompressAndSave();
+    /* 注意：這裡讀到的只是「本機」資料，雲端（Firebase）如果還沒回應，
+       這份可能是舊的（例如另一台裝置剛新增的備忘錄，這台還沒同步到）。
+       如果在這裡對舊資料做「壓縮後存回雲端」，等於把舊版本蓋回去，
+       會讓另一台裝置剛新增的內容憑空消失。所以開啟雲端同步時，
+       壓縮存檔一律只交給收到雲端資料之後的那個時機點處理（見 memoInitFirebase）。 */
+    if (!sbUseFirebase) memoMaybeRecompressAndSave();
   });
 }
 function memoClose(){
@@ -5274,7 +5336,7 @@ function memoCardsRender(){
     });
   }
 }
-memoLoadLocal().then(function(){ memoMaybeRecompressAndSave(); });
+memoLoadLocal().then(function(){ if (!sbUseFirebase) memoMaybeRecompressAndSave(); /* 原因同 memoOpen() 內的說明：雲端開著時，只信任收到雲端資料之後的那份，才不會拿本機舊資料誤蓋掉別裝置剛新增的內容 */ });
 
 
 /* ---- 景點卡片對照筆記 key（供快速選單使用） ---- */
@@ -5335,6 +5397,13 @@ function cover2SwitchTab(name){
     if (!tripMapInitDone) initTripMap();
     mapInitListCollapse();
     setTimeout(function(){ if (tripMapInstance) tripMapInstance.invalidateSize(); }, 50);
+  }
+  /* 補救：如果使用者在上面「精簡版」還在作用時就已經切到地圖分頁，
+     精簡版當時可能還抓不到 initTripMap，導致地圖一直卡在「載入中」。
+     完整版函式來就緒後，這裡順手檢查一次，需要的話立刻補跑初始化。 */
+  if (name === 'map' && !tripMapInitDone) {
+    initTripMap();
+    mapInitListCollapse();
   }
   if (name !== 'days'){
     var nav = document.querySelector('.nav-links');
