@@ -634,7 +634,7 @@ strong{font-weight:700;}
 /* ============================================================
    SPLIT BILL · 分帳
    ============================================================ */
-.tools-fab-wrap{position:fixed;right:16px;bottom:calc(22px + env(safe-area-inset-bottom));z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;pointer-events:none;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);}
+.tools-fab-wrap{position:fixed;right:16px;bottom:calc(22px + env(safe-area-inset-bottom) + var(--extra-bottom-inset, 0px));z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:10px;opacity:1;pointer-events:none;transform:translateZ(0) translateY(0) scale(1);-webkit-transform:translateZ(0) translateY(0) scale(1);transition:opacity 0.4s ease,transform 0.4s cubic-bezier(0.32,1.15,0.4,1);}
 .tools-fab-wrap.nav-active{opacity:0;transform:translateZ(0) translateY(-78vh) scale(0.4);pointer-events:none;}
 .tools-fab{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 6px 18px rgba(196,98,45,0.4);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s ease;flex-shrink:0;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;pointer-events:auto;}
 .tools-fab.open{transform:rotate(90deg);}
@@ -689,7 +689,7 @@ strong{font-weight:700;}
 .usj-chip.dragging{opacity:0.85;z-index:50;box-shadow:0 4px 10px rgba(0,0,0,0.25);}
 .usj-chip-inline-time{font-size:9px;font-weight:400;opacity:0.85;}
 .usj-chip-includes{font-size:9px;font-weight:400;opacity:0.92;line-height:1.45;margin-top:3px;}
-.usj-chip-popup{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--surface);border:0.5px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:1000;width:min(320px,88vw);}
+.usj-chip-popup{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom) + var(--extra-bottom-inset, 0px));transform:translateX(-50%);background:var(--surface);border:0.5px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:1000;width:min(320px,88vw);}
 .usj-chip-popup-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:2px;}
 .usj-chip-popup-time{font-size:12px;color:var(--muted);margin-bottom:10px;white-space:pre-line;line-height:1.5;}
 .usj-chip-popup-row{display:flex;gap:8px;margin-bottom:8px;}
@@ -703,9 +703,9 @@ strong{font-weight:700;}
 .usj-chip-popup-close{width:100%;font-size:12.5px;font-weight:600;padding:8px;border-radius:8px;border:0.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;}
 .usj-time-marker{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:20;pointer-events:none;}
 .usj-time-marker::before{content:attr(data-label);position:absolute;right:6px;top:-9px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:1.5px 7px;border-radius:9px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
-.usj-insert-btn{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:1001;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:12px 22px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(196,98,45,0.4);cursor:pointer;}
+.usj-insert-btn{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom) + var(--extra-bottom-inset, 0px));transform:translateX(-50%);z-index:1001;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:12px 22px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(196,98,45,0.4);cursor:pointer;}
 .usj-sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:1002;display:none;}
-.usj-insert-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:1003;background:var(--surface);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;width:100%;max-width:480px;max-height:70vh;box-shadow:0 -8px 24px rgba(0,0,0,0.2);box-sizing:border-box;display:flex;flex-direction:column;}
+.usj-insert-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:1003;background:var(--surface);border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom) + var(--extra-bottom-inset, 0px)) 16px;width:100%;max-width:480px;max-height:70vh;box-shadow:0 -8px 24px rgba(0,0,0,0.2);box-sizing:border-box;display:flex;flex-direction:column;}
 .usj-sheet-list-wrap{max-height:calc(70vh - 140px);overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;will-change:scroll-position;}
 .usj-sheet-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;font-family:var(--font-serif);}
 .usj-sheet-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
@@ -787,7 +787,7 @@ strong{font-weight:700;}
 .map-note-sheet-title{font-family:var(--font-serif);font-size:15px;font-weight:700;color:var(--ink);}
 .map-note-sheet-close-x{flex-shrink:0;width:28px;height:28px;border-radius:50%;border:none;background:var(--surface-2);color:var(--ink-2);font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .map-note-sheet-body{padding:14px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;flex:1 1 auto;min-height:0;}
-.map-note-sheet-footer{padding:12px 16px max(12px, env(safe-area-inset-bottom));flex-shrink:0;border-top:0.5px solid var(--line);background:var(--surface);}
+.map-note-sheet-footer{padding:12px 16px calc(max(12px, env(safe-area-inset-bottom)) + var(--extra-bottom-inset, 0px));flex-shrink:0;border-top:0.5px solid var(--line);background:var(--surface);}
 
 /* ---- 備忘錄（一張一張卡片：標題＋圖片，可收合展開，改用一般表單元素而非 contenteditable，
    避免舊版單一文件模型把「一段內容」拆成好幾個平行 DOM 節點所衍生的各種收合／點擊錯位問題） ---- */
@@ -818,7 +818,7 @@ strong{font-weight:700;}
 .memo-card-img-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:#d64545;color:#fff;font-size:11px;line-height:1;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.35);padding:0;display:flex;align-items:center;justify-content:center;}
 .memo-card-add-img-btn{width:22%;margin:0 2.4% 8px 0;aspect-ratio:1/1;border-radius:10px;border:1px dashed rgba(196,98,45,0.35);background:rgba(196,98,45,0.07);color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;line-height:1.3;padding:0;}
 .memo-card-add-img-btn.busy{opacity:0.6;pointer-events:none;}
-.memo-toolbar{display:flex;gap:8px;padding:10px var(--pad) max(10px, env(safe-area-inset-bottom));border-top:0.5px solid var(--line);background:var(--surface);flex-shrink:0;}
+.memo-toolbar{display:flex;gap:8px;padding:10px var(--pad) calc(max(10px, env(safe-area-inset-bottom)) + var(--extra-bottom-inset, 0px));border-top:0.5px solid var(--line);background:var(--surface);flex-shrink:0;}
 .memo-add-card-btn{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent);background:rgba(196,98,45,0.07);border:1px dashed rgba(196,98,45,0.35);border-radius:9px;padding:9px;cursor:pointer;font-family:inherit;}
 #memo-overlay .sb-panel{position:relative;}
 .memo-toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
@@ -1779,6 +1779,36 @@ function toolsToggleMenu(){
   fab.classList.toggle('open', !isOpen);
 }
 function bgHandleTap(){ toolsToggleMenu(); }
+
+/* ------------------------------------------------------------------
+   額外處理：LINE／Messenger 等 App 內建瀏覽器自己的下方工具列
+   ------------------------------------------------------------------
+   iOS 的 env(safe-area-inset-bottom) 只會回報「手機本身」的安全區域
+   （Home 指示條那一小條），並不知道外面還包了一層 LINE、FB 等 App
+   自己畫的瀏覽器工具列（返回、用瀏覽器開啟、重新整理、⋯）——這層工具列
+   會再往上多吃掉一截畫面，讓右下角的「⋯」等按鈕還是被蓋住。
+   這裡改用 visualViewport（瀏覽器實際「看得到」的可視高度）跟
+   window.innerHeight（版面認知的高度）兩者的差，換算出「這層工具列
+   到底多蓋住了多少」，存成一個 CSS 變數，讓下面按鈕能再往上讓開這一截。
+   一般 Safari 沒有這層工具列時，這個差會接近 0，不會有影響。 */
+function updateExtraBottomInset(){
+  try {
+    var vv = window.visualViewport;
+    var extra = 0;
+    if (vv) {
+      extra = window.innerHeight - vv.height - vv.offsetTop;
+      if (extra < 0 || !isFinite(extra)) extra = 0;
+    }
+    document.documentElement.style.setProperty('--extra-bottom-inset', extra + 'px');
+  } catch(e){}
+}
+updateExtraBottomInset();
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', updateExtraBottomInset);
+  window.visualViewport.addEventListener('scroll', updateExtraBottomInset);
+}
+window.addEventListener('resize', updateExtraBottomInset);
+window.addEventListener('orientationchange', function(){ setTimeout(updateExtraBottomInset, 250); });
 </script>
 
 
