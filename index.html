@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+</head>
+<body>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="light">
@@ -649,6 +651,7 @@ strong{font-weight:700;}
 .tools-menu-icon.bg{background:rgba(139,95,191,0.14);color:#8b5fbf;}
 .tools-menu-icon.usj{background:rgba(214,69,69,0.14);color:#d64545;}
 .tools-menu-icon.memo{background:rgba(58,125,183,0.14);color:#3a7db7;}
+.tools-menu-icon.export{background:rgba(31,138,112,0.14);color:#1f8a70;}
 .map-day-toggles{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;padding:12px var(--pad);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:var(--surface-2);border-bottom:0.5px solid var(--line);flex-shrink:0;}
 .map-day-toggles::-webkit-scrollbar{display:none;}
 .map-day-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:100px;padding:6px 12px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:border-color 0.15s ease,box-shadow 0.15s ease;}
@@ -823,6 +826,16 @@ strong{font-weight:700;}
 #memo-overlay .sb-panel{position:relative;}
 .memo-toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
 .memo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ---- 行程匯出 ---- */
+#export-overlay .sb-panel{position:relative;}
+.export-hint{font-size:12.5px;color:var(--muted);line-height:1.7;background:var(--surface-2);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+.export-actions{display:flex;gap:8px;margin-bottom:14px;}
+.export-btn{flex:1;text-align:center;font-size:13.5px;font-weight:700;padding:11px;border-radius:10px;border:0.5px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:inherit;}
+.export-btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.export-textarea{width:100%;box-sizing:border-box;min-height:52vh;font-size:12.5px;line-height:1.7;padding:12px;border-radius:10px;border:0.5px solid var(--line);background:var(--surface-2);color:var(--ink-2);font-family:inherit;resize:vertical;white-space:pre-wrap;}
+.export-toast{position:absolute;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);max-width:86%;background:rgba(30,30,30,0.94);color:#fff;font-size:13px;line-height:1.5;padding:10px 16px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transition:opacity 0.25s ease, transform 0.25s ease;z-index:20;text-align:center;}
+.export-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .map-note-save-btn{width:100%;font-size:14px;font-weight:700;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:inherit;}
 
 /* ---- 通用刪除確認彈窗（筆記共用，z-index 高於所有 bottom sheet） ---- */
@@ -1717,8 +1730,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';s.onload=function(){if(window.mapLeafletReadyRetry)window.mapLeafletReadyRetry();};document.head.appendChild(s);"></script>
-</head>
-<body>
 <section class="cover2" id="cover2">
 <!-- ============================================================
      TOOLS MENU · 工具選單（分帳／待辦清單）
@@ -1729,6 +1740,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
     <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
     <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
+    <button class="tools-menu-item" onclick="toolsOpenTool('export')"><span class="tools-menu-icon export">📤</span>匯出行程</button>
     <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
   </div>
   <button class="tools-fab" id="tools-fab" onclick="bgHandleTap()" aria-label="工具選單">⋮</button>
@@ -1739,6 +1751,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <button class="tools-menu-item" onclick="toolsOpenTool('memo')"><span class="tools-menu-icon memo">📓</span>備忘錄</button>
   <button class="tools-menu-item" onclick="toolsOpenTool('td')"><span class="tools-menu-icon td">✓</span>待辦清單</button>
   <button class="tools-menu-item" onclick="toolsOpenTool('usj')"><span class="tools-menu-icon usj">🎢</span>USJ規劃</button>
+  <button class="tools-menu-item" onclick="toolsOpenTool('export')"><span class="tools-menu-icon export">📤</span>匯出行程</button>
   <button class="tools-menu-item" onclick="toolsOpenTool('help')"><span class="tools-menu-icon help">❓</span>使用說明</button>
 </div>
 
@@ -2474,6 +2487,23 @@ window.closeLB = function(pfx) {
 </div>
 </section>
 
+<div class="sb-overlay" id="export-overlay">
+  <div class="sb-panel">
+    <div class="sb-header">
+      <div class="sb-title">匯出行程</div>
+      <button class="sb-close" onclick="exportClose()">&times;</button>
+    </div>
+    <div class="sb-body">
+      <div class="export-hint">整理成文字版本，包含全部 6 天行程與所有待辦事項，方便分享到 LINE、訊息，或存到備忘錄。</div>
+      <div class="export-actions">
+        <button class="export-btn export-btn-primary" onclick="exportShare()">📤 分享</button>
+        <button class="export-btn" onclick="exportCopy()">📋 複製文字</button>
+      </div>
+      <textarea class="export-textarea" id="export-textarea" readonly onclick="this.select()"></textarea>
+    </div>
+  </div>
+  <div class="export-toast" id="export-toast"></div>
+</div>
 <div class="sb-overlay" id="help-overlay">
   <div class="sb-panel">
     <div class="sb-header">
@@ -2908,7 +2938,8 @@ function toolsOpenTool(type){
   if (type === 'help') helpOpen();
   if (type === 'map') mapOpen();
   if (type === 'usj') usjOpen();
-  if (type === 'memo') memoOpen();}
+  if (type === 'memo') memoOpen();
+  if (type === 'export') exportOpen();}
 /* ---- ⋮ 連續點擊 10 次開啟預算試算（隱藏手勢） ---- */
 var bgTapCount = 0;
 var bgTapTimer = null;
@@ -7072,6 +7103,120 @@ function tdCheckReminders(){
   if (changed) tdSaveLocalBackup();
   if (document.getElementById('td-overlay').classList.contains('open')) tdRenderList();
 }
+
+/* ---- 行程匯出：把 6 天行程（來自地圖分頁用的 mapItinerary 清單）
+   跟全部待辦事項整理成一份純文字，方便用系統分享或複製貼到別的 App。 ---- */
+var exportDayDates = {1:'10/23',2:'10/24',3:'10/25',4:'10/26',5:'10/27',6:'10/28'};
+function exportBuildText(){
+  var lines = [];
+  lines.push('🗾 大阪旅遊書 2026');
+  lines.push('');
+  for (var day = 1; day <= 6; day++){
+    lines.push('════ DAY ' + day + ' · ' + (exportDayDates[day] || '') + ' ════');
+    var rows = mapItinerary[String(day)] || [];
+    rows.forEach(function(row){
+      var dur = (row.u && row.u !== '—') ? '　(' + row.u + ')' : '';
+      lines.push(row.t + '　' + row.d + dur);
+      /* 行程地圖裡每一站可以另外加「筆記」（mapNotes[row.k]），
+         匯出時也一併帶出來，接在該行程項目後面，方便使用者不用另外開 App 對照。 */
+      var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[row.k]) || [];
+      rowNotes.forEach(function(note){
+        var noteText = (note && note.text) ? String(note.text).trim() : '';
+        if (!noteText) return;
+        noteText.split('\n').forEach(function(nl, ni){
+          lines.push((ni === 0 ? '　📝 ' : '　　') + nl);
+        });
+      });
+    });
+    lines.push('');
+  }
+  lines.push('────────────────');
+  lines.push('✅ 待辦事項');
+  lines.push('');
+  /* 用「排序後直接走過全部 tdItems」取代「照 sbDayOptions 一格一格去比對 day 欄位」，
+     避免舊資料、手動改過的資料、或未來新格式的 day 值（只要不是剛好等於
+     'pre'/'day1'...'day6' 其中一個字串）在比對時直接被跳過、整條待辦憑空消失。
+     這裡排序時「認得的日期」照順序排在前面，「不認得的日期」統一排到最後，
+     但兩種都會被印出來，不會有任何一筆被漏掉。 */
+  var tdSorted = tdItems.slice().sort(function(a, b){
+    var keyA = a.day || 'pre', keyB = b.day || 'pre';
+    var dayA = sbDayOptions.indexOf(keyA);
+    var dayB = sbDayOptions.indexOf(keyB);
+    if (dayA === -1) dayA = sbDayOptions.length;
+    if (dayB === -1) dayB = sbDayOptions.length;
+    if (dayA !== dayB) return dayA - dayB;
+    /* 兩筆都落在「不認得的日期」那一堆時，先照原始字串分組，
+       確保同一種不認得的 day 值會排在一起，標題不會被拆成兩段。 */
+    if (keyA !== keyB) return keyA < keyB ? -1 : 1;
+    return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+  });
+  var tdLastDayKey = null;
+  tdSorted.forEach(function(it){
+    var dayKey = it.day || 'pre';
+    if (dayKey !== tdLastDayKey) {
+      lines.push('【' + (sbDayLabel[dayKey] || dayKey) + '】');
+      tdLastDayKey = dayKey;
+    }
+    var mark = it.done ? '[✓]' : '[　]';
+    var deadlineTxt = '';
+    if (it.deadline) {
+      try {
+        var dl = new Date(it.deadline);
+        if (!isNaN(dl.getTime())) {
+          deadlineTxt = '　⏰' + (dl.getMonth()+1) + '/' + dl.getDate() + ' ' + (dl.getHours()<10?'0':'')+dl.getHours() + ':' + (dl.getMinutes()<10?'0':'')+dl.getMinutes();
+        }
+      } catch(e){}
+    }
+    lines.push(mark + ' ' + it.text + deadlineTxt);
+  });
+  if (!tdSorted.length) lines.push('（尚無待辦事項）');
+  return lines.join('\n').replace(/\n+$/,'\n');
+}
+function exportOpen(){
+  var ta = document.getElementById('export-textarea');
+  if (ta) ta.value = exportBuildText();
+  document.getElementById('export-overlay').classList.add('open');
+  lockBodyScroll();
+}
+function exportClose(){
+  document.getElementById('export-overlay').classList.remove('open');
+  unlockBodyScroll();
+}
+function exportShowToast(msg){
+  var el = document.getElementById('export-toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(exportShowToast._t);
+  exportShowToast._t = setTimeout(function(){ el.classList.remove('show'); }, 2400);
+}
+function exportShare(){
+  var text = document.getElementById('export-textarea').value || exportBuildText();
+  if (navigator.share) {
+    navigator.share({ title: '大阪旅遊書 2026 行程', text: text }).catch(function(err){
+      /* 使用者自己按取消分享，不需要顯示任何錯誤或改做其他事 */
+      if (err && err.name === 'AbortError') return;
+      exportCopy();
+    });
+  } else {
+    exportCopy();
+  }
+}
+function exportCopy(){
+  var text = document.getElementById('export-textarea').value || exportBuildText();
+  function manualFallback(){
+    var ta = document.getElementById('export-textarea');
+    if (ta) { ta.focus(); ta.select(); }
+    exportShowToast('請長按文字框手動複製');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){
+      exportShowToast('✅ 已複製到剪貼簿');
+    }).catch(manualFallback);
+  } else {
+    manualFallback();
+  }
+}
 setInterval(tdCheckReminders, 60000);
 tdLoadLocal();
 document.addEventListener('DOMContentLoaded', function(){
@@ -7197,6 +7342,5 @@ document.addEventListener('DOMContentLoaded', initQuickActions);
   <button type="button" class="qa-pop-item" onclick="qaPopAction('todo')"><span class="qa-pop-icon">✅</span>加入待辦</button>
   <button type="button" class="qa-pop-item" id="qa-pop-note-btn" onclick="qaPopAction('note')"><span class="qa-pop-icon">🗒️</span>筆記</button>
 </div>
-
 </body>
 </html>
