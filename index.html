@@ -7413,7 +7413,30 @@ function exportPreloadImageSizes(){
 function exportBuildDaySectionHTML(day, sizeMap){
   var html = '<div class="exp-day-h">DAY ' + day + ' · ' + exportEsc(exportDayDates[day] || '') + '</div>';
   var rows = mapItinerary[String(day)] || [];
+  /* DAY 2 的時間軸會因為環球影城實際排的設施結束時間不同而跟著往後順延（晚餐、回飯店
+     時間都是「環球玩到幾點」才往後推算的），地圖分頁本來就會呼叫這個函式重算一次，
+     匯出也要呼叫，不然時間會停在沒展開樂園行程前的預設值，跟地圖分頁上看到的對不上。 */
+  if (day === 2 && typeof computeDay2ChainedTimes === 'function') computeDay2ChainedTimes();
   rows.forEach(function(row){
+    /* DAY 2 的環球影城是用另一套「樂園排程規劃」（usjState／方案、放置的設施）單獨管理，
+       跟其他天共用的 mapItinerary 是兩份完全不同的資料——行程表裡只留了一條總覽列
+       「📍 日本環球影城 07:40–21:00」，使用者實際排的每一項設施／體驗都存在 usjState
+       裡，之前匯出完全沒去讀這份資料，整個樂園行程就等於沒匯出來。這裡比照地圖分頁
+       本來就有在做的展開邏輯（usjVisiblePlacedItems），把使用者實際排好的樂園行程
+       展開成一條一條再輸出，不再只有一條總覽列。 */
+    if (day === 2 && row.r && row.r[0] === 2 && row.r[1] === 1 && typeof usjVisiblePlacedItems === 'function') {
+      var usjItems = usjVisiblePlacedItems();
+      if (usjItems.length) {
+        usjItems.forEach(function(it){
+          var usjDur = (it.dur != null) ? '<span class="exp-dur">(' + exportEsc(String(it.dur)) + '分)</span>' : '';
+          html += '<div class="exp-row"><div class="exp-time">' + exportEsc(usjMinToLabel(it.start)) + '</div><div class="exp-body"><div class="exp-body-line">'
+            + (it.emoji ? '<span class="exp-row-icon">' + exportEsc(it.emoji) + '</span>' : '')
+            + '<span class="exp-body-text">' + exportEsc(it.name || '') + usjDur + '</span></div></div></div>';
+        });
+        return;
+      }
+    }
+    var rowTime = (day === 2 && typeof day2ChainedTimes !== 'undefined' && day2ChainedTimes[row.k]) ? day2ChainedTimes[row.k].t : row.t;
     var dur = (row.u && row.u !== '—') ? '<span class="exp-dur">(' + exportEsc(row.u) + ')</span>' : '';
     /* 行程文字前面的表情符號圖示（✈️🚇🚶…）跟筆記的 📝 是同一個問題：混在同一行文字裡，
        會在部分手機上把整行的行高跟文字在行框裡的位置撐歪，導致分隔線看起來沒有置中在
@@ -7424,7 +7447,7 @@ function exportBuildDaySectionHTML(day, sizeMap){
     var rowText = String(row.d || '');
     var rowIconMatch = rowText.match(/^(\p{Extended_Pictographic}️?)\s*/u);
     if (rowIconMatch) { rowIcon = rowIconMatch[1]; rowText = rowText.slice(rowIconMatch[0].length); }
-    html += '<div class="exp-row"><div class="exp-time">' + exportEsc(row.t) + '</div><div class="exp-body"><div class="exp-body-line">'
+    html += '<div class="exp-row"><div class="exp-time">' + exportEsc(rowTime) + '</div><div class="exp-body"><div class="exp-body-line">'
       + (rowIcon ? '<span class="exp-row-icon">' + exportEsc(rowIcon) + '</span>' : '')
       + '<span class="exp-body-text">' + exportEsc(rowText) + dur + '</span></div>';
     var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[row.k]) || [];
@@ -7556,6 +7579,31 @@ function exportCollectDayNotePhotos(day){
 function exportDataUrlToBlob(dataUrl){
   return fetch(dataUrl).then(function(r){ return r.blob(); }).catch(function(){ return null; });
 }
+/* 量出一張照片（data URL）的原始像素尺寸，PDF 加頁時要照這個尺寸開頁，
+   不能直接套用行程總覽圖的小尺寸，不然塞進 PDF 的照片一樣會被壓得很小。
+   載入失敗就回傳一個保守的預設尺寸，不中斷其他照片的處理。 */
+function exportImageNaturalSize(dataUrl){
+  return new Promise(function(resolve){
+    var img = new Image();
+    img.onload = function(){ resolve({ w: img.naturalWidth || img.width || 800, h: img.naturalHeight || img.height || 600 }); };
+    img.onerror = function(){ resolve({ w: 800, h: 600 }); };
+    img.src = dataUrl;
+  });
+}
+/* 照片本來存的是 JPEG 還是 PNG，要讓 jsPDF 用對應的格式參數加進去，
+   格式對不上的話，有些照片在 PDF 裡會整張空白或顏色跑掉。 */
+function exportImageFormatFromDataUrl(dataUrl){
+  var m = /^data:image\/(png|jpe?g|webp)/i.exec(dataUrl || '');
+  if (!m) return 'JPEG';
+  var t = m[1].toLowerCase();
+  if (t === 'png') return 'PNG';
+  if (t === 'webp') return 'WEBP';
+  return 'JPEG';
+}
+/* PDF 裡每張照片最長邊的上限：手機相機原圖常常有 3000～4000px 以上，PDF 頁面
+   不需要塞到那麼大，裁到這個上限還是遠比之前「完全沒放進 PDF」清楚很多，
+   也能避免單一張超大原圖把整份 PDF 檔案撐到過大。 */
+var EXPORT_PDF_PHOTO_MAX_SIDE = 2000;
 function exportToGallery(){
   var btn = document.getElementById('export-btn-media');
   if (btn) btn.classList.add('busy');
@@ -7574,23 +7622,54 @@ function exportToGallery(){
         var dayMatch = /^DAY (\d+)$/.exec(r.label);
         if (dayMatch) items = items.concat(exportCollectDayNotePhotos(Number(dayMatch[1])));
       });
-      var pdfBlob = null;
       var jsPDFCtor = exportGetJsPDF();
+      var pdfPromise;
       if (jsPDFCtor) {
-        try {
+        pdfPromise = (function(){
           var doc = null;
+          var chain = Promise.resolve();
           results.forEach(function(r){
-            var c = r.canvas, w = c.width, h = c.height;
-            var orient = (w > h) ? 'l' : 'p';
-            if (!doc) { doc = new jsPDFCtor({ unit:'px', format:[w, h], orientation:orient }); }
-            else { doc.addPage([w, h], orient); }
-            doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, w, h);
+            chain = chain.then(function(){
+              var c = r.canvas, w = c.width, h = c.height;
+              var orient = (w > h) ? 'l' : 'p';
+              if (!doc) { doc = new jsPDFCtor({ unit:'px', format:[w, h], orientation:orient }); }
+              else { doc.addPage([w, h], orient); }
+              doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, w, h);
+              /* 這一天的總覽圖加完後，緊接著把這一天筆記的原始照片各自加成一頁——
+                 之前只把每天的總覽圖塞進 PDF，筆記原始照片只出現在畫面上的畫廊、
+                 沒有真的寫進 PDF 檔案，這才是「PDF 圖片還是太小、不是原圖」的
+                 真正原因：PDF 裡本來就只有縮得很小的總覽截圖，原圖根本沒放進去。 */
+              var dayMatch = /^DAY (\d+)$/.exec(r.label);
+              if (!dayMatch) return;
+              var photos = exportCollectDayNotePhotos(Number(dayMatch[1]));
+              if (!photos.length) return;
+              return photos.reduce(function(p, photo){
+                return p.then(function(){
+                  return exportImageNaturalSize(photo.dataUrl).then(function(dim){
+                    var pw = dim.w, ph = dim.h;
+                    var maxSide = EXPORT_PDF_PHOTO_MAX_SIDE;
+                    if (Math.max(pw, ph) > maxSide) {
+                      var scaleDown = maxSide / Math.max(pw, ph);
+                      pw = Math.max(1, Math.round(pw * scaleDown));
+                      ph = Math.max(1, Math.round(ph * scaleDown));
+                    }
+                    var pOrient = (pw > ph) ? 'l' : 'p';
+                    doc.addPage([pw, ph], pOrient);
+                    doc.addImage(photo.dataUrl, exportImageFormatFromDataUrl(photo.dataUrl), 0, 0, pw, ph);
+                  });
+                });
+              }, Promise.resolve());
+            });
           });
-          if (doc) pdfBlob = doc.output('blob');
-        } catch(err){ pdfBlob = null; }
+          return chain.then(function(){ return doc ? doc.output('blob') : null; }).catch(function(){ return null; });
+        })();
+      } else {
+        pdfPromise = Promise.resolve(null);
       }
-      exportOpenGallery('🗾 行程匯出（每天總覽圖＋筆記原始照片，長按即可存檔）', items, pdfBlob);
-      if (!pdfBlob) exportShowToast('⚠️ PDF 檔案產生失敗，但下面的圖片內容都還在，可以長按或分別存檔');
+      pdfPromise.then(function(pdfBlob){
+        exportOpenGallery('🗾 行程匯出（每天總覽圖＋筆記原始照片，長按即可存檔）', items, pdfBlob);
+        if (!pdfBlob) exportShowToast('⚠️ PDF 檔案產生失敗，但下面的圖片內容都還在，可以長按或分別存檔');
+      });
     });
   });
 }
