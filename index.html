@@ -849,10 +849,20 @@ strong{font-weight:700;}
 #export-print-area .exp-row{display:flex;gap:10px;padding:11px 0;border-bottom:0.5px solid rgba(26,20,16,0.08);font-size:12.5px;line-height:1.6;}
 #export-print-area .exp-time{flex-shrink:0;width:92px;color:#c4622d;font-weight:700;font-variant-numeric:tabular-nums;}
 #export-print-area .exp-body{flex:1;min-width:0;}
+/* 圖示獨立成自己的 flex 子項目，不再跟文字擠在同一段行內文字裡，這樣表情符號字型的
+   metrics（行高、ascent/descent）就不會再傳導到旁邊文字的垂直位置，分隔線才能穩定
+   落在兩個行程中間，不受表情符號影響。 */
+#export-print-area .exp-body-line{display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+#export-print-area .exp-row-icon{flex-shrink:0;line-height:1;}
 #export-print-area .exp-dur{color:#6b6259;font-size:11px;margin-left:4px;}
-#export-print-area .exp-note{margin-top:7px;background:#f7f4f0;border-radius:6px;padding:6px 8px;font-size:11.5px;color:#3d3530;white-space:pre-line;}
-#export-print-area .exp-note-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-#export-print-area .exp-note-imgs img{width:150px;height:150px;object-fit:contain;background:#f0ece6;border-radius:6px;}
+/* 筆記文字不再用「灰底方框」呈現——方框上下留白是否對稱，會因為表情符號在不同手機上
+   的字型 metrics 而跑掉，試了三種排版修法都沒辦法保證每支手機都對稱。既然問題根源是
+   「有底色的方框」會讓這點誤差被看出來，乾脆拿掉底色，連左邊的細線也一併拿掉，純粹
+   靠 📝 圖示本身跟字體顏色區分這是筆記，不會再有任何框線的留白問題。 */
+#export-print-area .exp-note{margin-top:7px;padding:4px 0;font-size:11.5px;line-height:1.3;color:#3d3530;white-space:pre-line;}
+#export-print-area .exp-note-icon{margin-right:4px;}
+#export-print-area .exp-note-imgs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 6px;}
+#export-print-area .exp-note-imgs img{width:112px;height:112px;border-radius:6px;background:#f0ece6;}
 #export-print-area .exp-todo-group{font-size:12.5px;font-weight:700;color:#c4622d;margin:14px 0 4px;}
 #export-print-area .exp-todo-row{font-size:12.5px;line-height:1.7;padding:2px 0;}
 @media print{
@@ -7333,25 +7343,29 @@ function exportCopy(){
 function exportEsc(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-/* 筆記照片的縮圖改成「先量好每張照片真正的寬高比例，再用內嵌的 width/height
-   畫出等比例縮小的框」，不再靠 CSS 的 object-fit 讓瀏覽器自動縮放／裁切。
-   html2canvas 對 object-fit（尤其是 contain）常常畫不準，會整張圖被硬拉伸
-   塞滿方框，比例跑掉、看起來又糊又變形。這裡直接把方框做成跟照片同比例，
-   瀏覽器預設的「填滿方框」就會是準確不變形的縮圖。sizeMap 由
-   exportPreloadImageSizes() 先量好再傳進來；量不到的就用正方形退回預設值。 */
+/* 筆記照片縮圖：第一版靠 CSS 的 object-fit 自動縮放，html2canvas 常常畫不準，
+   整張原圖被硬拉伸塞滿方框，比例跑掉；第二版改成「量好比例、用 width/height
+   畫出同比例的框」，DOM 本身量出來是對的，但 html2canvas 擷取時同一個方框
+   還是會量錯尺寸，縮圖在匯出的圖片／PDF 裡變得過大、跟整列行程不成比例，
+   看起來很突兀。兩次问题根源相同：html2canvas 對「用 CSS／屬性縮小顯示的大圖」
+   measure 不穩定。這次不再依賴 html2canvas 量尺寸，而是直接用 canvas 把每張
+   筆記照片「真的」畫成固定大小的正方形縮圖（置中裁切，等同相簿縮圖的做法），
+   畫完才塞進 <img>——縮圖本身的像素就是最終大小，html2canvas 只能照樣畫出來，
+   不會再算錯。原始、未裁切的完整照片仍然會另外出現在匯出畫廊裡（可以放大看
+   清楚），這裡的縮圖純粹是行程總覽圖裡的小預覽。 */
+var EXPORT_NOTE_THUMB_BOX = 112; /* 縮圖邊長（CSS px，html2canvas 再乘上 scale:2） */
 function exportNoteImgTagHTML(src, sizeMap){
-  var BOX = 220; /* 縮圖最長邊（CSS px，html2canvas 會再乘上 scale:2） */
   var dim = sizeMap && sizeMap[src];
-  var w = BOX, h = BOX;
-  if (dim && dim.w > 0 && dim.h > 0) {
-    var ratio = dim.w / dim.h;
-    if (ratio >= 1) { w = BOX; h = Math.max(1, Math.round(BOX / ratio)); }
-    else { h = BOX; w = Math.max(1, Math.round(BOX * ratio)); }
-  }
-  return '<img src="' + exportEsc(src) + '" width="' + w + '" height="' + h + '" style="width:' + w + 'px;height:' + h + 'px;">';
+  /* 這張照片連原圖都載入失敗（例如資料毀損、還沒同步完成）：與其硬塞一個
+     注定顯示不出東西的 <img>，留下一塊看起來像排版沒做好的空白方塊，不如
+     乾脆不佔位置——直接跳過這張，其餘照片／文字排版不受影響。 */
+  if (dim && dim.failed) return '';
+  var box = EXPORT_NOTE_THUMB_BOX;
+  var thumbSrc = (dim && dim.thumbDataUrl) || src;
+  return '<img src="' + exportEsc(thumbSrc) + '" width="' + box + '" height="' + box + '" style="width:' + box + 'px;height:' + box + 'px;">';
 }
-/* 匯出會用到的所有筆記照片，先統一預先載入一次量出真實寬高，存成
-   { 圖片網址: {w,h} } 的對照表，建立版面時才能畫出正確比例的縮圖框。 */
+/* 匯出會用到的所有筆記照片，先統一預先載入、裁切、畫成固定大小的正方形縮圖，
+   存成 { 圖片網址: {thumbDataUrl} } 的對照表，建立版面時直接拿來用。 */
 function exportPreloadImageSizes(){
   var srcSet = {};
   for (var d = 1; d <= 6; d++) {
@@ -7365,14 +7379,32 @@ function exportPreloadImageSizes(){
   var list = Object.keys(srcSet);
   if (!list.length) return Promise.resolve({});
   var sizeMap = {};
+  var box = EXPORT_NOTE_THUMB_BOX;
+  var dpr = 2; /* 配合 html2canvas 的 scale:2，縮圖本身存 2 倍解析度，畫面才不會模糊 */
   var tasks = list.map(function(src){
     return new Promise(function(resolve){
       var img = new Image();
       img.onload = function(){
-        sizeMap[src] = { w: img.naturalWidth || img.width || 1, h: img.naturalHeight || img.height || 1 };
+        var w = img.naturalWidth || img.width || 1, h = img.naturalHeight || img.height || 1;
+        var thumbDataUrl = src;
+        try {
+          var side = Math.min(w, h); /* 置中裁切成正方形，跟原本相簿縮圖同樣的作法 */
+          var sx = (w - side) / 2, sy = (h - side) / 2;
+          var canvas = document.createElement('canvas');
+          canvas.width = box * dpr; canvas.height = box * dpr;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, box * dpr, box * dpr);
+          thumbDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        } catch (err) { /* 畫不出來就退回原圖，不中斷其他照片 */ }
+        sizeMap[src] = { thumbDataUrl: thumbDataUrl };
         resolve();
       };
-      img.onerror = function(){ resolve(); };
+      img.onerror = function(){
+        /* 原圖本身就載入失敗（不是縮圖裁切失敗），再怎麼退回原圖也一樣顯示不出來，
+           標記成 failed，讓呼叫端直接跳過這張、不要畫出一個空白方塊。 */
+        sizeMap[src] = { failed: true };
+        resolve();
+      };
       img.src = src;
     });
   });
@@ -7383,18 +7415,37 @@ function exportBuildDaySectionHTML(day, sizeMap){
   var rows = mapItinerary[String(day)] || [];
   rows.forEach(function(row){
     var dur = (row.u && row.u !== '—') ? '<span class="exp-dur">(' + exportEsc(row.u) + ')</span>' : '';
-    html += '<div class="exp-row"><div class="exp-time">' + exportEsc(row.t) + '</div><div class="exp-body">' + exportEsc(row.d) + dur;
+    /* 行程文字前面的表情符號圖示（✈️🚇🚶…）跟筆記的 📝 是同一個問題：混在同一行文字裡，
+       會在部分手機上把整行的行高跟文字在行框裡的位置撐歪，導致分隔線看起來沒有置中在
+       兩個行程正中間。這裡比照筆記圖示的做法，把圖示切出來跟文字分屬不同的 flex 子項目
+       （用既有的 mapStripEmoji 同一套正規表示法抓出開頭的表情符號），而不是跟文字擠在
+       同一段行內文字裡，這樣圖示的字型 metrics 就不會再影響到文字本身的垂直位置。 */
+    var rowIcon = '';
+    var rowText = String(row.d || '');
+    var rowIconMatch = rowText.match(/^(\p{Extended_Pictographic}️?)\s*/u);
+    if (rowIconMatch) { rowIcon = rowIconMatch[1]; rowText = rowText.slice(rowIconMatch[0].length); }
+    html += '<div class="exp-row"><div class="exp-time">' + exportEsc(row.t) + '</div><div class="exp-body"><div class="exp-body-line">'
+      + (rowIcon ? '<span class="exp-row-icon">' + exportEsc(rowIcon) + '</span>' : '')
+      + '<span class="exp-body-text">' + exportEsc(rowText) + dur + '</span></div>';
     var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[row.k]) || [];
     rowNotes.forEach(function(note){
       var noteText = (note && note.text) ? String(note.text).trim() : '';
       var noteImages = (note && note.images) || [];
-      if (noteText) html += '<div class="exp-note">📝 ' + exportEsc(noteText) + '</div>';
+      /* 📝 這個表情符號本身的字型（跟中文／數字文字是不同的表情符號字型）在不少手機瀏覽器上
+         行高／上下留白的 metrics 比一般文字大很多，混排在同一行時會把整行的「行框」撐高，
+         撐高的空間又幾乎全部分配到文字上方，不是平均分配——這才是之前量測時，電腦瀏覽器
+         看起來還好、但實機截圖「上面空很多、下面幾乎貼邊」的真正原因。解法是把表情符號
+         包進一個固定大小、line-height:1 的 inline-block，不讓它的字型 metrics 影響整行高度。 */
+      if (noteText) html += '<div class="exp-note"><span class="exp-note-icon">📝</span>' + exportEsc(noteText) + '</div>';
       if (noteImages.length) {
-        html += '<div class="exp-note-imgs">';
+        var imgsHtml = '';
         noteImages.forEach(function(src){
-          if (src) html += exportNoteImgTagHTML(src, sizeMap);
+          if (src) imgsHtml += exportNoteImgTagHTML(src, sizeMap);
         });
-        html += '</div>';
+        /* 這則筆記的照片全部載入失敗時，imgsHtml 會是空字串：這種情況乾脆不輸出
+           外層的 .exp-note-imgs 容器，避免留下一塊沒有任何照片、卻還保留上下
+           margin 的空白區域。 */
+        if (imgsHtml) html += '<div class="exp-note-imgs">' + imgsHtml + '</div>';
       }
     });
     html += '</div></div>';
