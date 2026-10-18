@@ -7354,6 +7354,40 @@ function exportEsc(s){
    不會再算錯。原始、未裁切的完整照片仍然會另外出現在匯出畫廊裡（可以放大看
    清楚），這裡的縮圖純粹是行程總覽圖裡的小預覽。 */
 var EXPORT_NOTE_THUMB_BOX = 112; /* 縮圖邊長（CSS px，html2canvas 再乘上 scale:2） */
+/* 匯出時要去哪些「筆記 key」撈筆記，每天的來源不一樣：一般天數就是當天 mapItinerary
+   的每一列（row.k）；DAY 2 比較特別，環球影城設施的筆記是掛在 usjState 展開出來的
+   每一項設施上（key 是 'usj-'+設施id，跟地圖分頁用同一套 key），不是掛在 mapItinerary
+   的列上——前一輪只把環球的「設施」展開出來，卻沒有把這些設施各自的筆記一起撈出來，
+   才會變成「環球的設施有匯出、但環球的筆記沒有」。這裡統一抽成一個函式，筆記的
+   預載、原始照片蒐集、版面產生都共用同一份來源清單，不會有地方漏掉。 */
+function exportNoteSourcesForDay(day){
+  var rows = mapItinerary[String(day)] || [];
+  var sources = rows.map(function(row){ return { key: row.k, label: String(row.d || '').trim() || row.t }; });
+  if (day === 2 && typeof usjVisiblePlacedItems === 'function') {
+    var usjItems = usjVisiblePlacedItems();
+    if (usjItems.length) {
+      usjItems.forEach(function(it){ sources.push({ key: 'usj-' + it.id, label: it.name || '' }); });
+    }
+  }
+  return sources;
+}
+/* 某個筆記 key 底下的文字＋縮圖，組成跟 .exp-row 之後直接黏上去的那段 HTML，
+   一般行程列、環球展開出來的設施列都呼叫這同一個函式，不會各寫一套邏輯。 */
+function exportNoteHTMLForKey(key, sizeMap){
+  var html = '';
+  var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[key]) || [];
+  rowNotes.forEach(function(note){
+    var noteText = (note && note.text) ? String(note.text).trim() : '';
+    var noteImages = (note && note.images) || [];
+    if (noteText) html += '<div class="exp-note"><span class="exp-note-icon">📝</span>' + exportEsc(noteText) + '</div>';
+    if (noteImages.length) {
+      var imgsHtml = '';
+      noteImages.forEach(function(src){ if (src) imgsHtml += exportNoteImgTagHTML(src, sizeMap); });
+      if (imgsHtml) html += '<div class="exp-note-imgs">' + imgsHtml + '</div>';
+    }
+  });
+  return html;
+}
 function exportNoteImgTagHTML(src, sizeMap){
   var dim = sizeMap && sizeMap[src];
   /* 這張照片連原圖都載入失敗（例如資料毀損、還沒同步完成）：與其硬塞一個
@@ -7369,10 +7403,10 @@ function exportNoteImgTagHTML(src, sizeMap){
 function exportPreloadImageSizes(){
   var srcSet = {};
   for (var d = 1; d <= 6; d++) {
-    (mapItinerary[String(d)] || []).forEach(function(row){
-      var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[row.k]) || [];
+    exportNoteSourcesForDay(d).forEach(function(src){
+      var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[src.key]) || [];
       rowNotes.forEach(function(note){
-        ((note && note.images) || []).forEach(function(src){ if (src) srcSet[src] = true; });
+        ((note && note.images) || []).forEach(function(img){ if (img) srcSet[img] = true; });
       });
     });
   }
@@ -7431,7 +7465,11 @@ function exportBuildDaySectionHTML(day, sizeMap){
           var usjDur = (it.dur != null) ? '<span class="exp-dur">(' + exportEsc(String(it.dur)) + '分)</span>' : '';
           html += '<div class="exp-row"><div class="exp-time">' + exportEsc(usjMinToLabel(it.start)) + '</div><div class="exp-body"><div class="exp-body-line">'
             + (it.emoji ? '<span class="exp-row-icon">' + exportEsc(it.emoji) + '</span>' : '')
-            + '<span class="exp-body-text">' + exportEsc(it.name || '') + usjDur + '</span></div></div></div>';
+            + '<span class="exp-body-text">' + exportEsc(it.name || '') + usjDur + '</span></div>'
+            /* 每項設施各自可能有筆記（掛在 'usj-'+設施id 這個 key 底下，跟地圖分頁
+               同一套），一併輸出，不然匯出的環球行程就只有設施名稱、沒有筆記內容。 */
+            + exportNoteHTMLForKey('usj-' + it.id, sizeMap)
+            + '</div></div>';
         });
         return;
       }
@@ -7556,19 +7594,17 @@ function exportRenderCanvases(){
    重新縮放過）也各自放進畫廊，可以直接放大、直接長按存檔。 */
 function exportCollectDayNotePhotos(day){
   var items = [];
-  var rows = mapItinerary[String(day)] || [];
-  rows.forEach(function(row){
-    var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[row.k]) || [];
+  exportNoteSourcesForDay(day).forEach(function(src){
+    var rowNotes = (typeof mapNotes !== 'undefined' && mapNotes[src.key]) || [];
     rowNotes.forEach(function(note){
       var images = (note && note.images) || [];
-      images.forEach(function(src, idx){
-        if (!src) return;
-        var placeName = String(row.d || '').trim();
+      images.forEach(function(img, idx){
+        if (!img) return;
         var suffix = images.length > 1 ? '（' + (idx + 1) + '/' + images.length + '）' : '';
         items.push({
-          label: '📷 DAY ' + day + ' 原始照片 · ' + (placeName || row.t) + suffix,
+          label: '📷 DAY ' + day + ' 原始照片 · ' + (src.label || '') + suffix,
           fileName: '大阪旅遊書_2026_DAY' + day + '_筆記照片_' + (items.length + 1),
-          dataUrl: src,
+          dataUrl: img,
           isOriginal: true
         });
       });
